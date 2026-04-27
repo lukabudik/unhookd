@@ -1,0 +1,11 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Each user's data lives under their recovery code.
+    // Any authenticated user (including anonymous) who knows the recovery code
+    // can read/write — the unguessable 12-char code is the access control.
+    match /users/{recoveryCode}/{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}

@@ -601,6 +601,8 @@ export function useNotifications() {
     if (time) localStorage.setItem(REMINDER_KEY, time)
     else localStorage.removeItem(REMINDER_KEY)
     setReminderTimeState(time)
+    // Invalidate cached FCM token so useFCMToken re-registers with updated reminderTime
+    localStorage.removeItem('unhookd_fcm_token')
   }, [])
 
   // Exposed for the test panel in Settings

@@ -149,11 +149,6 @@ export default function HomePage() {
     if (journeyDays < 1) return undefined
     const totalDays =
       taperPlan.daysToTarget !== undefined ? taperPlan.daysToTarget : taperPlan.weeksToTarget * 7
-    const reduction = taperPlan.startAmount - taperPlan.targetAmount
-    // Expected cumulative dose by today vs actual
-    const expectedCumulative =
-      taperPlan.startAmount * journeyDays -
-      ((reduction / totalDays) * journeyDays * journeyDays) / 2
     // Just compare today's dose vs target
     if (todayTotal === 0) return undefined
     const diff = dailyTarget - todayTotal

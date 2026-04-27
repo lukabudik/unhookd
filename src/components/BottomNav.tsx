@@ -17,27 +17,6 @@ function HomeIcon({ active }: { active: boolean }) {
   )
 }
 
-function LogIcon({ active }: { active: boolean }) {
-  return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <circle
-        cx="12"
-        cy="12"
-        r="9"
-        stroke={active ? 'var(--primary)' : 'var(--text-secondary)'}
-        strokeWidth="1.75"
-        fill={active ? 'rgba(232,168,124,0.15)' : 'none'}
-      />
-      <path
-        d="M12 8V16M8 12H16"
-        stroke={active ? 'var(--primary)' : 'var(--text-secondary)'}
-        strokeWidth="1.75"
-        strokeLinecap="round"
-      />
-    </svg>
-  )
-}
-
 function HistoryIcon({ active }: { active: boolean }) {
   return (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
