@@ -4,6 +4,8 @@
 
 > Built for the real experience of quitting: the cravings at 2am, the flat weeks after you hit zero, the days when staying on plan takes genuine effort.
 
+**[→ Try it live at unhookd.vercel.app](https://unhookd.vercel.app)**
+
 ---
 
 ## The Story

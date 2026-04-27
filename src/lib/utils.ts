@@ -57,7 +57,10 @@ export function getContextualQuote(dayNumber: number, streak: number, journeyPct
     pool = QUOTES_MID
   }
 
-  return pool[dayNumber % pool.length]
+  // Seed with today's date so the quote changes daily but stays stable within a day
+  const today = new Date()
+  const dateSeed = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate()
+  return pool[dateSeed % pool.length]
 }
 
 /**
