@@ -338,7 +338,7 @@ export function QuickLogSheet({ isOpen, dailyTarget, todayTotal = 0, onLog, onSu
 
                   {/* Log button */}
                   <motion.button
-                    onClick={handleLog}
+                    onClick={() => handleLog()}
                     disabled={!selected || isLogging}
                     animate={{
                       scale: selected && !isLogging ? 1 : 0.98,
