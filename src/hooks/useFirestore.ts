@@ -3,20 +3,10 @@
 import { useEffect, useState, useCallback } from 'react'
 import { IntakeEntry, TaperPlan, useAppStore } from '@/lib/store'
 import { getTodayKey, getDailyTargetForDate, dateToKey } from '@/lib/utils'
+import { getOrCreateRecoveryCode } from '@/lib/recovery'
 
-const LOCAL_UID_KEY = 'unhookd_uid'
 const LOCAL_PLAN_KEY = 'unhookd_plan'
 const LOCAL_INTAKES_PREFIX = 'unhookd_intakes_'
-
-function getLocalUid(): string {
-  if (typeof window === 'undefined') return ''
-  let uid = localStorage.getItem(LOCAL_UID_KEY)
-  if (!uid) {
-    uid = `local_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-    localStorage.setItem(LOCAL_UID_KEY, uid)
-  }
-  return uid
-}
 
 function loadLocalPlan(): TaperPlan | null {
   if (typeof window === 'undefined') return null
@@ -58,16 +48,22 @@ function loadLocalIntakesForDate(dateKey: string): IntakeEntry[] {
 export function useFirestore() {
   const { setUserId, setTodayIntakes, setTaperPlan, todayIntakes, taperPlan } = useAppStore()
   const [loading, setLoading] = useState(true)
-  const [userId, setLocalUserId] = useState<string | null>(null)
+  // recoveryCode is stable per-device and used as the Firestore data path key
+  const [recoveryCode, setLocalRecoveryCode] = useState<string>('')
   const [firebaseReady, setFirebaseReady] = useState(false)
   const [firestoreDb, setFirestoreDb] = useState<import('firebase/firestore').Firestore | null>(
     null
   )
-  const [authInstance, setAuthInstance] = useState<import('firebase/auth').Auth | null>(null) // eslint-disable-line @typescript-eslint/no-unused-vars
 
-  // Initialize Firebase and sign in anonymously
+  // Initialize Firebase (anonymous auth for security rules) and load recovery code
   useEffect(() => {
     let mounted = true
+
+    const code = getOrCreateRecoveryCode()
+    if (mounted) {
+      setLocalRecoveryCode(code)
+      setUserId(code)
+    }
 
     async function initFirebase() {
       try {
@@ -77,34 +73,22 @@ export function useFirestore() {
         if (!mounted) return
 
         setFirestoreDb(db)
-        setAuthInstance(auth)
 
         onAuthStateChanged(auth, async (user) => {
           if (!mounted) return
           if (user) {
-            setLocalUserId(user.uid)
-            setUserId(user.uid)
-            localStorage.setItem(LOCAL_UID_KEY, user.uid)
             setFirebaseReady(true)
           } else {
             try {
               await signInAnonymously(auth)
             } catch {
-              // Fall back to local
-              const localUid = getLocalUid()
-              setLocalUserId(localUid)
-              setUserId(localUid)
+              // Firebase auth failed — localStorage-only mode
             }
           }
         })
       } catch {
-        // Firebase not configured — use local storage
-        const localUid = getLocalUid()
-        if (mounted) {
-          setLocalUserId(localUid)
-          setUserId(localUid)
-          setFirebaseReady(false)
-        }
+        // Firebase not configured — localStorage-only mode
+        if (mounted) setFirebaseReady(false)
       }
     }
 
@@ -114,9 +98,9 @@ export function useFirestore() {
     }
   }, [setUserId])
 
-  // Load data once we have a userId
+  // Load data once we have a recovery code
   useEffect(() => {
-    if (!userId) return
+    if (!recoveryCode) return
 
     let mounted = true
 
@@ -129,13 +113,11 @@ export function useFirestore() {
             await import('firebase/firestore')
 
           // Load taper plan
-          const planRef = doc(firestoreDb, 'users', userId!, 'data', 'plan')
+          const planRef = doc(firestoreDb, 'users', recoveryCode, 'data', 'plan')
           const planSnap = await getDoc(planRef)
           if (planSnap.exists() && mounted) {
-            const planData = planSnap.data() as TaperPlan
-            setTaperPlan(planData)
+            setTaperPlan(planSnap.data() as TaperPlan)
           } else {
-            // Try local fallback
             const localPlan = loadLocalPlan()
             if (localPlan && mounted) setTaperPlan(localPlan)
           }
@@ -146,7 +128,7 @@ export function useFirestore() {
           const endOfDay = new Date()
           endOfDay.setHours(23, 59, 59, 999)
 
-          const intakesRef = collection(firestoreDb, 'users', userId!, 'intakes')
+          const intakesRef = collection(firestoreDb, 'users', recoveryCode, 'intakes')
           const q = query(
             intakesRef,
             where('timestamp', '>=', Timestamp.fromDate(startOfDay)),
@@ -167,14 +149,12 @@ export function useFirestore() {
             setTodayIntakes(intakes)
           }
         } catch {
-          // Fall back to local
           const localPlan = loadLocalPlan()
           if (localPlan && mounted) setTaperPlan(localPlan)
           const localIntakes = loadLocalIntakes(todayKey)
           if (mounted) setTodayIntakes(localIntakes)
         }
       } else {
-        // Local storage only
         const localPlan = loadLocalPlan()
         if (localPlan && mounted) setTaperPlan(localPlan)
         const localIntakes = loadLocalIntakes(todayKey)
@@ -188,7 +168,7 @@ export function useFirestore() {
     return () => {
       mounted = false
     }
-  }, [userId, firebaseReady, firestoreDb, setTaperPlan, setTodayIntakes])
+  }, [recoveryCode, firebaseReady, firestoreDb, setTaperPlan, setTodayIntakes])
 
   const addIntake = useCallback(
     async (entry: Omit<IntakeEntry, 'id'>) => {
@@ -210,10 +190,10 @@ export function useFirestore() {
         saveLocalIntakes(entryDateKey, [...existing, newEntry])
       }
 
-      if (firebaseReady && firestoreDb && userId) {
+      if (firebaseReady && firestoreDb && recoveryCode) {
         try {
           const { collection, addDoc, Timestamp } = await import('firebase/firestore')
-          const intakesRef = collection(firestoreDb, 'users', userId, 'intakes')
+          const intakesRef = collection(firestoreDb, 'users', recoveryCode, 'intakes')
           await addDoc(intakesRef, {
             amount: entry.amount,
             timestamp: Timestamp.fromDate(new Date(entry.timestamp)),
@@ -225,7 +205,7 @@ export function useFirestore() {
         }
       }
     },
-    [todayIntakes, setTodayIntakes, firebaseReady, firestoreDb, userId]
+    [todayIntakes, setTodayIntakes, firebaseReady, firestoreDb, recoveryCode]
   )
 
   const updateIntake = useCallback(
@@ -235,10 +215,10 @@ export function useFirestore() {
       setTodayIntakes(updated)
       saveLocalIntakes(todayKey, updated)
 
-      if (firebaseReady && firestoreDb && userId) {
+      if (firebaseReady && firestoreDb && recoveryCode) {
         try {
           const { doc, updateDoc, Timestamp } = await import('firebase/firestore')
-          const ref = doc(firestoreDb, 'users', userId, 'intakes', id)
+          const ref = doc(firestoreDb, 'users', recoveryCode, 'intakes', id)
           const patch: Record<string, unknown> = {}
           if (updates.amount !== undefined) patch.amount = updates.amount
           if (updates.mood !== undefined) patch.mood = updates.mood || null
@@ -251,7 +231,7 @@ export function useFirestore() {
         }
       }
     },
-    [todayIntakes, setTodayIntakes, firebaseReady, firestoreDb, userId]
+    [todayIntakes, setTodayIntakes, firebaseReady, firestoreDb, recoveryCode]
   )
 
   const updatePlan = useCallback(
@@ -265,23 +245,23 @@ export function useFirestore() {
       setTaperPlan(updatedPlan)
       saveLocalPlan(updatedPlan)
 
-      if (firebaseReady && firestoreDb && userId) {
+      if (firebaseReady && firestoreDb && recoveryCode) {
         try {
           const { doc, setDoc } = await import('firebase/firestore')
-          const planRef = doc(firestoreDb, 'users', userId, 'data', 'plan')
+          const planRef = doc(firestoreDb, 'users', recoveryCode, 'data', 'plan')
           await setDoc(planRef, updatedPlan)
         } catch (err) {
           console.error('Failed to save plan to Firestore:', err)
         }
       }
     },
-    [setTaperPlan, firebaseReady, firestoreDb, userId]
+    [setTaperPlan, firebaseReady, firestoreDb, recoveryCode]
   )
 
   const getHistoryIntakes = useCallback(
     async (dateKey: string): Promise<IntakeEntry[]> => {
       // Try Firestore first
-      if (firebaseReady && firestoreDb && userId) {
+      if (firebaseReady && firestoreDb && recoveryCode) {
         try {
           const { collection, query, where, getDocs, Timestamp } =
             await import('firebase/firestore')
@@ -291,7 +271,7 @@ export function useFirestore() {
           const endOfDay = new Date(date)
           endOfDay.setHours(23, 59, 59, 999)
 
-          const intakesRef = collection(firestoreDb, 'users', userId, 'intakes')
+          const intakesRef = collection(firestoreDb, 'users', recoveryCode, 'intakes')
           const q = query(
             intakesRef,
             where('timestamp', '>=', Timestamp.fromDate(startOfDay)),
@@ -315,11 +295,11 @@ export function useFirestore() {
 
       return loadLocalIntakesForDate(dateKey)
     },
-    [firebaseReady, firestoreDb, userId]
+    [firebaseReady, firestoreDb, recoveryCode]
   )
 
   return {
-    userId,
+    recoveryCode,
     todayIntakes,
     taperPlan,
     loading,

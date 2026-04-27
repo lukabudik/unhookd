@@ -8,7 +8,19 @@ import { useAppStore } from '@/lib/store'
 import { useNotifications } from '@/hooks/useNotifications'
 import { formatGrams, getDaysSincePlanStart, getDailyTargetForDate } from '@/lib/utils'
 import { format } from 'date-fns'
-import { ArrowLeft, ChevronRight, AlertTriangle, Check } from 'lucide-react'
+import {
+  ArrowLeft,
+  ChevronRight,
+  AlertTriangle,
+  Check,
+  Copy,
+  KeyRound,
+  RotateCcw,
+  Bell,
+  FlaskConical,
+} from 'lucide-react'
+import { getOrCreateRecoveryCode, setRecoveryCode, normalize, isValidCode } from '@/lib/recovery'
+import { NOTIFICATION_TYPES, type NotifType } from '@/hooks/useNotifications'
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -103,12 +115,18 @@ function Row({
 export default function SettingsPage() {
   const router = useRouter()
   const { taperPlan } = useAppStore()
-  const { permission, reminderTime, setReminderTime, requestPermission } = useNotifications()
+  const { permission, reminderTime, setReminderTime, requestPermission, fireTestNotification } =
+    useNotifications()
   const [showResetConfirm, setShowResetConfirm] = useState(false)
   const [exportDone, setExportDone] = useState(false)
   const [reminderEnabled, setReminderEnabled] = useState(false)
   const [localReminderTime, setLocalReminderTime] = useState('09:00')
   const [notifStatus, setNotifStatus] = useState<string>('')
+  const [recoveryCode, setLocalCode] = useState('')
+  const [copied, setCopied] = useState(false)
+  const [showRestore, setShowRestore] = useState(false)
+  const [restoreInput, setRestoreInput] = useState('')
+  const [restoreError, setRestoreError] = useState('')
 
   useEffect(() => {
     setReminderEnabled(!!reminderTime)
@@ -117,7 +135,34 @@ export default function SettingsPage() {
     else if (permission === 'denied') setNotifStatus('Blocked by browser')
     else if (permission === 'unsupported') setNotifStatus('Not supported')
     else setNotifStatus('Not enabled')
+    setLocalCode(getOrCreateRecoveryCode())
   }, [permission, reminderTime])
+
+  function copyCode() {
+    navigator.clipboard.writeText(recoveryCode).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    })
+  }
+
+  function handleRestoreInput(val: string) {
+    setRestoreInput(normalize(val))
+    setRestoreError('')
+  }
+
+  function handleRestore() {
+    const code = normalize(restoreInput)
+    if (!isValidCode(code)) {
+      setRestoreError('Invalid code. Format should be XXXX-XXXX-XXXX.')
+      return
+    }
+    if (code === recoveryCode) {
+      setRestoreError("That's already your current code.")
+      return
+    }
+    setRecoveryCode(code)
+    window.location.href = '/'
+  }
 
   async function handleToggleReminder() {
     if (reminderEnabled) {
@@ -498,6 +543,180 @@ export default function SettingsPage() {
             )}
           </Section>
 
+          {/* Recovery code section */}
+          <Section title="Device recovery">
+            <div style={{ padding: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                <KeyRound size={16} color="var(--primary)" strokeWidth={1.75} />
+                <p
+                  style={{ margin: 0, fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}
+                >
+                  Your recovery code
+                </p>
+              </div>
+              <p
+                style={{
+                  margin: '0 0 14px 0',
+                  fontSize: 12,
+                  color: 'var(--text-secondary)',
+                  lineHeight: 1.5,
+                }}
+              >
+                This is the only way to access your data on a new device. Write it down somewhere
+                safe — we can&apos;t recover it for you.
+              </p>
+
+              {/* Code display */}
+              <div
+                style={{
+                  backgroundColor: 'var(--bg)',
+                  borderRadius: 14,
+                  padding: '14px 16px',
+                  border: '1px solid var(--border)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 12,
+                  marginBottom: 10,
+                }}
+              >
+                <span
+                  style={{
+                    fontFamily: 'monospace',
+                    fontSize: 20,
+                    fontWeight: 700,
+                    color: 'var(--primary)',
+                    letterSpacing: '0.1em',
+                  }}
+                >
+                  {recoveryCode || '···· ···· ····'}
+                </span>
+                <button
+                  onClick={copyCode}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    padding: '7px 12px',
+                    borderRadius: 10,
+                    flexShrink: 0,
+                    backgroundColor: copied ? 'rgba(127,176,105,0.12)' : 'var(--surface)',
+                    border: `1px solid ${copied ? 'rgba(127,176,105,0.3)' : 'var(--border)'}`,
+                    color: copied ? 'var(--success)' : 'var(--text-secondary)',
+                    fontSize: 13,
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                    transition: 'all 0.15s',
+                  }}
+                >
+                  {copied ? (
+                    <>
+                      <Check size={13} strokeWidth={2.5} /> Copied
+                    </>
+                  ) : (
+                    <>
+                      <Copy size={13} strokeWidth={2} /> Copy
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {/* Restore toggle */}
+              <button
+                onClick={() => {
+                  setShowRestore(!showRestore)
+                  setRestoreInput('')
+                  setRestoreError('')
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: 0,
+                  fontSize: 13,
+                  color: showRestore ? 'var(--primary)' : 'var(--text-secondary)',
+                  fontWeight: showRestore ? 600 : 400,
+                }}
+              >
+                <RotateCcw size={13} strokeWidth={2} />
+                Restore from another device
+              </button>
+
+              <AnimatePresence>
+                {showRestore && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    style={{ overflow: 'hidden' }}
+                  >
+                    <div
+                      style={{ paddingTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}
+                    >
+                      <input
+                        type="text"
+                        placeholder="XXXX-XXXX-XXXX"
+                        value={restoreInput}
+                        onChange={(e) => handleRestoreInput(e.target.value)}
+                        maxLength={14}
+                        style={{
+                          width: '100%',
+                          height: 46,
+                          padding: '0 14px',
+                          borderRadius: 12,
+                          fontSize: 16,
+                          fontFamily: 'monospace',
+                          letterSpacing: '0.08em',
+                          boxSizing: 'border-box',
+                          backgroundColor: 'var(--bg)',
+                          color: 'var(--text-primary)',
+                          border: `1px solid ${restoreError ? 'var(--danger)' : 'var(--border)'}`,
+                        }}
+                      />
+                      {restoreError && (
+                        <p style={{ margin: 0, fontSize: 12, color: 'var(--danger)' }}>
+                          {restoreError}
+                        </p>
+                      )}
+                      <p
+                        style={{
+                          margin: 0,
+                          fontSize: 11,
+                          color: 'var(--text-secondary)',
+                          lineHeight: 1.4,
+                        }}
+                      >
+                        This replaces your current data with the data from the entered code. Your
+                        current data will no longer be accessible.
+                      </p>
+                      <button
+                        onClick={handleRestore}
+                        disabled={restoreInput.length < 14}
+                        style={{
+                          height: 44,
+                          borderRadius: 12,
+                          fontWeight: 600,
+                          fontSize: 14,
+                          border: 'none',
+                          cursor: restoreInput.length >= 14 ? 'pointer' : 'default',
+                          backgroundColor:
+                            restoreInput.length >= 14 ? 'var(--primary)' : 'var(--surface)',
+                          color: restoreInput.length >= 14 ? 'var(--bg)' : 'var(--text-secondary)',
+                        }}
+                      >
+                        Restore my data
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </Section>
+
           {/* Data section */}
           <Section title="Data">
             <div
@@ -553,6 +772,89 @@ export default function SettingsPage() {
               </p>
             </div>
           </Section>
+
+          {/* Notification test panel */}
+          {permission === 'granted' && (
+            <Section title="Notification test lab">
+              <div style={{ padding: '14px 16px 8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                  <FlaskConical size={15} color="var(--text-secondary)" strokeWidth={1.75} />
+                  <p
+                    style={{
+                      margin: 0,
+                      fontSize: 12,
+                      color: 'var(--text-secondary)',
+                      lineHeight: 1.4,
+                    }}
+                  >
+                    Fire any notification immediately to see how it looks. Notifications only appear
+                    when permissions are granted.
+                  </p>
+                </div>
+              </div>
+              {(
+                Object.entries(NOTIFICATION_TYPES) as [
+                  NotifType,
+                  { label: string; description: string },
+                ][]
+              ).map(([type, { label, description }], i, arr) => (
+                <div
+                  key={type}
+                  style={{
+                    padding: '12px 16px',
+                    borderBottom: i < arr.length - 1 ? '1px solid var(--border)' : 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: 12,
+                  }}
+                >
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p
+                      style={{
+                        margin: 0,
+                        fontSize: 14,
+                        fontWeight: 500,
+                        color: 'var(--text-primary)',
+                      }}
+                    >
+                      {label}
+                    </p>
+                    <p
+                      style={{
+                        margin: '2px 0 0 0',
+                        fontSize: 11,
+                        color: 'var(--text-secondary)',
+                        lineHeight: 1.3,
+                      }}
+                    >
+                      {description}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => fireTestNotification(type)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 5,
+                      padding: '6px 12px',
+                      borderRadius: 8,
+                      flexShrink: 0,
+                      backgroundColor: 'rgba(232,168,124,0.1)',
+                      border: '1px solid rgba(232,168,124,0.25)',
+                      color: 'var(--primary)',
+                      fontSize: 12,
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <Bell size={11} strokeWidth={2} />
+                    Send
+                  </button>
+                </div>
+              ))}
+            </Section>
+          )}
 
           {/* About section */}
           <Section title="About">
