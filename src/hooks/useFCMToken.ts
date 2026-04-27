@@ -2,14 +2,11 @@
 
 import { useEffect } from 'react'
 import { getOrCreateRecoveryCode } from '@/lib/recovery'
-import { getServiceWorkerRegistration } from '@/components/Providers'
 
 const VAPID_KEY =
   'BHETp2qVlTYj8slxzGwUhbtYcj7qwlt1OdG2Gzhv-FSBWqgDbVlQZ1ggMzZoRjajxGzYAfMsLV-jYb7sgh2IJWE'
 const FCM_TOKEN_KEY = 'unhookd_fcm_token'
 
-// Registers the device with FCM and persists the token to Firestore so the
-// Cloud Function can send push notifications when the app is closed.
 export function useFCMToken() {
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -22,19 +19,18 @@ export function useFCMToken() {
         const { auth, db } = await import('@/lib/firebase')
         const { onAuthStateChanged } = await import('firebase/auth')
 
-        // Wait for Firebase auth to resolve from IndexedDB (auth.currentUser is
-        // null synchronously; onAuthStateChanged fires once the state is loaded)
         const user = await new Promise<import('firebase/auth').User | null>((resolve) => {
           const unsub = onAuthStateChanged(auth, (u) => {
             unsub()
             resolve(u)
           })
         })
-
         if (!user || cancelled) return
 
-        // Get the shared SW registration (same instance used for push subscriptions)
-        const swReg = await getServiceWorkerRegistration()
+        // Use getRegistration instead of importing from Providers to avoid a
+        // circular dependency (Providers → useFCMToken → Providers) that breaks
+        // module evaluation order in Safari's JS engine
+        const swReg = await navigator.serviceWorker.getRegistration('/')
         if (!swReg || cancelled) return
 
         const { getMessaging, getToken } = await import('firebase/messaging')
@@ -46,7 +42,6 @@ export function useFCMToken() {
         })
         if (!token || cancelled) return
 
-        // Skip Firestore write if token hasn't changed
         const stored = localStorage.getItem(FCM_TOKEN_KEY)
         if (stored === token) return
         localStorage.setItem(FCM_TOKEN_KEY, token)
@@ -55,8 +50,6 @@ export function useFCMToken() {
         if (!recoveryCode) return
 
         const reminderTime = localStorage.getItem('unhookd_reminder_time') || null
-        // JS getTimezoneOffset() returns minutes BEHIND UTC (e.g. UTC+1 → -60)
-        // We store the offset FROM UTC (positive east)
         const utcOffsetMinutes = -new Date().getTimezoneOffset()
 
         const { doc, setDoc } = await import('firebase/firestore')
@@ -72,7 +65,6 @@ export function useFCMToken() {
           { merge: true }
         )
       } catch (err) {
-        // FCM not available in this environment (e.g. local dev without HTTPS) — silent fail
         console.debug('[FCM] token registration skipped:', err)
       }
     }
