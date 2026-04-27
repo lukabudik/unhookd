@@ -72,9 +72,10 @@ export default function PlanPage() {
 
     for (let week = 0; week <= Math.min(weeksToTarget, 12); week++) {
       const day = week * 7
-      const dailyTarget = week === weeksToTarget
-        ? targetAmount
-        : Math.max(targetAmount, startAmount - (reduction / totalDays) * day)
+      const dailyTarget =
+        week === weeksToTarget
+          ? targetAmount
+          : Math.max(targetAmount, startAmount - (reduction / totalDays) * day)
       steps.push({
         week,
         target: Math.round(dailyTarget * 2) / 2,
@@ -130,16 +131,16 @@ export default function PlanPage() {
   async function handleResumeHold() {
     if (!taperPlan || isHolding) return
     setIsHolding(true)
-    const { holdUntil: _u, holdStartDate: _s, ...rest } = taperPlan
+    const { holdUntil: _holdUntil, holdStartDate: _holdStartDate, ...rest } = taperPlan
     await updatePlan(rest)
     setIsHolding(false)
   }
 
-  const holdIsActive = !!(taperPlan?.holdUntil && new Date(taperPlan.holdUntil) >= new Date(getTodayKey()))
+  const holdIsActive = !!(
+    taperPlan?.holdUntil && new Date(taperPlan.holdUntil) >= new Date(getTodayKey())
+  )
 
-  const weeklyReduction = weeksToTarget > 0
-    ? (startAmount - targetAmount) / weeksToTarget
-    : 0
+  const weeklyReduction = weeksToTarget > 0 ? (startAmount - targetAmount) / weeksToTarget : 0
 
   return (
     <div className="page-container" style={{ paddingTop: 24, paddingBottom: 24 }}>
@@ -200,13 +201,21 @@ export default function PlanPage() {
               >
                 {taperPlan ? 'Update your plan' : 'Create your plan'}
               </h1>
-              <p style={{ fontSize: 14, color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>
-                A realistic taper is kinder to your body and more likely to succeed. Go at your pace.
+              <p
+                style={{ fontSize: 14, color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}
+              >
+                A realistic taper is kinder to your body and more likely to succeed. Go at your
+                pace.
               </p>
             </div>
 
             {/* Dose calculator */}
-            <DoseCalculator onApply={(daily) => { setStartAmount(daily); setTargetAmount(0) }} />
+            <DoseCalculator
+              onApply={(daily) => {
+                setStartAmount(daily)
+                setTargetAmount(0)
+              }}
+            />
 
             {/* Starting amount */}
             <div
@@ -377,7 +386,8 @@ export default function PlanPage() {
                 </div>
               </div>
               <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '8px 0 0 0' }}>
-                Reducing by ~{formatGrams(Math.round(weeklyReduction * 10) / 10)} per week — slow and steady wins
+                Reducing by ~{formatGrams(Math.round(weeklyReduction * 10) / 10)} per week — slow
+                and steady wins
               </p>
             </div>
 
@@ -411,7 +421,10 @@ export default function PlanPage() {
                       justifyContent: 'space-between',
                       alignItems: 'center',
                       padding: '12px 16px',
-                      borderBottom: i < Math.min(weeklySchedule.length - 1, 7) ? '1px solid var(--border)' : 'none',
+                      borderBottom:
+                        i < Math.min(weeklySchedule.length - 1, 7)
+                          ? '1px solid var(--border)'
+                          : 'none',
                       backgroundColor: step.week === 0 ? 'rgba(232,168,124,0.05)' : 'transparent',
                     }}
                   >
@@ -428,7 +441,8 @@ export default function PlanPage() {
                       style={{
                         fontSize: 16,
                         fontWeight: 700,
-                        color: step.week === weeksToTarget ? 'var(--success)' : 'var(--text-primary)',
+                        color:
+                          step.week === weeksToTarget ? 'var(--success)' : 'var(--text-primary)',
                       }}
                     >
                       {formatGrams(step.target)}/day
@@ -444,14 +458,19 @@ export default function PlanPage() {
                       color: 'var(--text-secondary)',
                     }}
                   >
-                    ...and {weeklySchedule.length - 8} more weeks until {formatGrams(targetAmount)}/day
+                    ...and {weeklySchedule.length - 8} more weeks until {formatGrams(targetAmount)}
+                    /day
                   </div>
                 )}
               </div>
             </div>
 
             {/* Taper trajectory chart — only after plan exists */}
-            {taperPlan && <TaperTrajectoryChart plan={{ ...taperPlan, startAmount, targetAmount, weeksToTarget }} />}
+            {taperPlan && (
+              <TaperTrajectoryChart
+                plan={{ ...taperPlan, startAmount, targetAmount, weeksToTarget }}
+              />
+            )}
 
             {/* Reminders */}
             {permission !== 'unsupported' && (
@@ -463,9 +482,23 @@ export default function PlanPage() {
                   border: '1px solid var(--border)',
                 }}
               >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: reminderEnabled ? 16 : 0 }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: reminderEnabled ? 16 : 0,
+                  }}
+                >
                   <div>
-                    <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 2px 0' }}>
+                    <p
+                      style={{
+                        fontSize: 15,
+                        fontWeight: 600,
+                        color: 'var(--text-primary)',
+                        margin: '0 0 2px 0',
+                      }}
+                    >
                       Daily reminder
                     </p>
                     <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: 0 }}>
@@ -511,7 +544,14 @@ export default function PlanPage() {
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
                   >
-                    <label style={{ fontSize: 12, color: 'var(--text-secondary)', display: 'block', marginBottom: 8 }}>
+                    <label
+                      style={{
+                        fontSize: 12,
+                        color: 'var(--text-secondary)',
+                        display: 'block',
+                        marginBottom: 8,
+                      }}
+                    >
                       Remind me at
                     </label>
                     <input
@@ -556,13 +596,22 @@ export default function PlanPage() {
               >
                 Why are you doing this?
               </label>
-              <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '0 0 10px 0', lineHeight: 1.5 }}>
+              <p
+                style={{
+                  fontSize: 12,
+                  color: 'var(--text-secondary)',
+                  margin: '0 0 10px 0',
+                  lineHeight: 1.5,
+                }}
+              >
                 Written to you, for when it gets hard. Shown inside the craving SOS.
               </p>
               <textarea
                 value={reasons}
                 onChange={(e) => setReasons(e.target.value.slice(0, 280))}
-                placeholder={'e.g. "I want to be present for my kids. I\'m tired of planning my day around dosing. I want my mornings back."'}
+                placeholder={
+                  'e.g. "I want to be present for my kids. I\'m tired of planning my day around dosing. I want my mornings back."'
+                }
                 rows={3}
                 style={{
                   width: '100%',
@@ -579,7 +628,14 @@ export default function PlanPage() {
                   boxSizing: 'border-box',
                 }}
               />
-              <p style={{ fontSize: 11, color: 'var(--text-secondary)', margin: '4px 0 0 0', textAlign: 'right' }}>
+              <p
+                style={{
+                  fontSize: 11,
+                  color: 'var(--text-secondary)',
+                  margin: '4px 0 0 0',
+                  textAlign: 'right',
+                }}
+              >
                 {280 - reasons.length} chars left
               </p>
             </div>
@@ -606,8 +662,16 @@ export default function PlanPage() {
               >
                 My person (optional)
               </label>
-              <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '0 0 12px 0', lineHeight: 1.5 }}>
-                Someone to call when it gets really hard. Shown as a call button inside the craving SOS.
+              <p
+                style={{
+                  fontSize: 12,
+                  color: 'var(--text-secondary)',
+                  margin: '0 0 12px 0',
+                  lineHeight: 1.5,
+                }}
+              >
+                Someone to call when it gets really hard. Shown as a call button inside the craving
+                SOS.
               </p>
               <div style={{ display: 'flex', gap: 10 }}>
                 <input
@@ -661,11 +725,31 @@ export default function PlanPage() {
               >
                 {holdIsActive ? (
                   <>
-                    <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--primary)', margin: '0 0 4px 0' }}>
-                      Hold active until {new Date(taperPlan.holdUntil!).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    <p
+                      style={{
+                        fontSize: 15,
+                        fontWeight: 600,
+                        color: 'var(--primary)',
+                        margin: '0 0 4px 0',
+                      }}
+                    >
+                      Hold active until{' '}
+                      {new Date(taperPlan.holdUntil!).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                      })}
                     </p>
-                    <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '0 0 14px 0', lineHeight: 1.5 }}>
-                      Your taper is paused at {formatGrams(getDailyTargetForDate(taperPlan, new Date()))} until then. Rest and recover.
+                    <p
+                      style={{
+                        fontSize: 13,
+                        color: 'var(--text-secondary)',
+                        margin: '0 0 14px 0',
+                        lineHeight: 1.5,
+                      }}
+                    >
+                      Your taper is paused at{' '}
+                      {formatGrams(getDailyTargetForDate(taperPlan, new Date()))} until then. Rest
+                      and recover.
                     </p>
                     <button
                       onClick={handleResumeHold}
@@ -687,11 +771,26 @@ export default function PlanPage() {
                   </>
                 ) : (
                   <>
-                    <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 4px 0' }}>
+                    <p
+                      style={{
+                        fontSize: 15,
+                        fontWeight: 600,
+                        color: 'var(--text-primary)',
+                        margin: '0 0 4px 0',
+                      }}
+                    >
                       Need a breather?
                     </p>
-                    <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '0 0 14px 0', lineHeight: 1.5 }}>
-                      Hold at your current dose for 7 days, then resume the taper automatically. No shame in taking a rest.
+                    <p
+                      style={{
+                        fontSize: 13,
+                        color: 'var(--text-secondary)',
+                        margin: '0 0 14px 0',
+                        lineHeight: 1.5,
+                      }}
+                    >
+                      Hold at your current dose for 7 days, then resume the taper automatically. No
+                      shame in taking a rest.
                     </p>
                     <button
                       onClick={handleHold}
@@ -808,17 +907,30 @@ function DoseCalculator({ onApply }: { onApply: (dailyLimit: number) => void }) 
             transition={{ duration: 0.2 }}
             style={{ overflow: 'hidden' }}
           >
-            <div style={{ padding: '0 20px 20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div
+              style={{ padding: '0 20px 20px', display: 'flex', flexDirection: 'column', gap: 12 }}
+            >
               <div style={{ display: 'flex', gap: 10 }}>
                 <div style={{ flex: 1 }}>
-                  <p style={{ margin: '0 0 6px 0', fontSize: 12, color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Grams remaining</p>
+                  <p
+                    style={{
+                      margin: '0 0 6px 0',
+                      fontSize: 12,
+                      color: 'var(--text-secondary)',
+                      fontWeight: 600,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em',
+                    }}
+                  >
+                    Grams remaining
+                  </p>
                   <input
                     type="number"
                     step="1"
                     min="0"
                     placeholder="e.g. 50"
                     value={grams}
-                    onChange={e => setGrams(e.target.value)}
+                    onChange={(e) => setGrams(e.target.value)}
                     style={{
                       width: '100%',
                       height: 46,
@@ -834,14 +946,25 @@ function DoseCalculator({ onApply }: { onApply: (dailyLimit: number) => void }) 
                   />
                 </div>
                 <div style={{ flex: 1 }}>
-                  <p style={{ margin: '0 0 6px 0', fontSize: 12, color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Days to taper</p>
+                  <p
+                    style={{
+                      margin: '0 0 6px 0',
+                      fontSize: 12,
+                      color: 'var(--text-secondary)',
+                      fontWeight: 600,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em',
+                    }}
+                  >
+                    Days to taper
+                  </p>
                   <input
                     type="number"
                     step="1"
                     min="1"
                     placeholder="e.g. 30"
                     value={days}
-                    onChange={e => setDays(e.target.value)}
+                    onChange={(e) => setDays(e.target.value)}
                     style={{
                       width: '100%',
                       height: 46,
@@ -873,16 +996,31 @@ function DoseCalculator({ onApply }: { onApply: (dailyLimit: number) => void }) 
                   }}
                 >
                   <div>
-                    <p style={{ margin: 0, fontSize: 13, color: 'var(--text-secondary)' }}>Recommended daily limit</p>
-                    <p style={{ margin: '2px 0 0 0', fontSize: 26, fontWeight: 800, color: 'var(--primary)', lineHeight: 1 }}>
+                    <p style={{ margin: 0, fontSize: 13, color: 'var(--text-secondary)' }}>
+                      Recommended daily limit
+                    </p>
+                    <p
+                      style={{
+                        margin: '2px 0 0 0',
+                        fontSize: 26,
+                        fontWeight: 800,
+                        color: 'var(--primary)',
+                        lineHeight: 1,
+                      }}
+                    >
                       {dailyLimit}g / day
                     </p>
-                    <p style={{ margin: '4px 0 0 0', fontSize: 11, color: 'var(--text-secondary)' }}>
+                    <p
+                      style={{ margin: '4px 0 0 0', fontSize: 11, color: 'var(--text-secondary)' }}
+                    >
                       Tapering to zero over {daysNum} days ({Math.round(daysNum / 7)} weeks)
                     </p>
                   </div>
                   <button
-                    onClick={() => { onApply(dailyLimit); setOpen(false) }}
+                    onClick={() => {
+                      onApply(dailyLimit)
+                      setOpen(false)
+                    }}
                     style={{
                       padding: '10px 16px',
                       borderRadius: 12,

@@ -60,8 +60,10 @@ export function useFirestore() {
   const [loading, setLoading] = useState(true)
   const [userId, setLocalUserId] = useState<string | null>(null)
   const [firebaseReady, setFirebaseReady] = useState(false)
-  const [firestoreDb, setFirestoreDb] = useState<import('firebase/firestore').Firestore | null>(null)
-  const [authInstance, setAuthInstance] = useState<import('firebase/auth').Auth | null>(null)
+  const [firestoreDb, setFirestoreDb] = useState<import('firebase/firestore').Firestore | null>(
+    null
+  )
+  const [authInstance, setAuthInstance] = useState<import('firebase/auth').Auth | null>(null) // eslint-disable-line @typescript-eslint/no-unused-vars
 
   // Initialize Firebase and sign in anonymously
   useEffect(() => {
@@ -107,7 +109,9 @@ export function useFirestore() {
     }
 
     initFirebase()
-    return () => { mounted = false }
+    return () => {
+      mounted = false
+    }
   }, [setUserId])
 
   // Load data once we have a userId
@@ -121,7 +125,8 @@ export function useFirestore() {
 
       if (firebaseReady && firestoreDb) {
         try {
-          const { collection, query, where, getDocs, Timestamp, doc, getDoc } = await import('firebase/firestore')
+          const { collection, query, where, getDocs, Timestamp, doc, getDoc } =
+            await import('firebase/firestore')
 
           // Load taper plan
           const planRef = doc(firestoreDb, 'users', userId!, 'data', 'plan')
@@ -180,122 +185,138 @@ export function useFirestore() {
     }
 
     loadData()
-    return () => { mounted = false }
+    return () => {
+      mounted = false
+    }
   }, [userId, firebaseReady, firestoreDb, setTaperPlan, setTodayIntakes])
 
-  const addIntake = useCallback(async (entry: Omit<IntakeEntry, 'id'>) => {
-    const newEntry: IntakeEntry = {
-      ...entry,
-      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-    }
+  const addIntake = useCallback(
+    async (entry: Omit<IntakeEntry, 'id'>) => {
+      const newEntry: IntakeEntry = {
+        ...entry,
+        id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      }
 
-    const entryDateKey = dateToKey(new Date(entry.timestamp))
-    const todayKey = getTodayKey()
+      const entryDateKey = dateToKey(new Date(entry.timestamp))
+      const todayKey = getTodayKey()
 
-    if (entryDateKey === todayKey) {
-      const updated = [...todayIntakes, newEntry]
+      if (entryDateKey === todayKey) {
+        const updated = [...todayIntakes, newEntry]
+        setTodayIntakes(updated)
+        saveLocalIntakes(todayKey, updated)
+      } else {
+        // Past date: persist to that day's key without touching today's store state
+        const existing = loadLocalIntakes(entryDateKey)
+        saveLocalIntakes(entryDateKey, [...existing, newEntry])
+      }
+
+      if (firebaseReady && firestoreDb && userId) {
+        try {
+          const { collection, addDoc, Timestamp } = await import('firebase/firestore')
+          const intakesRef = collection(firestoreDb, 'users', userId, 'intakes')
+          await addDoc(intakesRef, {
+            amount: entry.amount,
+            timestamp: Timestamp.fromDate(new Date(entry.timestamp)),
+            note: entry.note || null,
+            mood: entry.mood || null,
+          })
+        } catch (err) {
+          console.error('Failed to save to Firestore:', err)
+        }
+      }
+    },
+    [todayIntakes, setTodayIntakes, firebaseReady, firestoreDb, userId]
+  )
+
+  const updateIntake = useCallback(
+    async (id: string, updates: Partial<Omit<IntakeEntry, 'id'>>) => {
+      const todayKey = getTodayKey()
+      const updated = todayIntakes.map((e) => (e.id === id ? { ...e, ...updates } : e))
       setTodayIntakes(updated)
       saveLocalIntakes(todayKey, updated)
-    } else {
-      // Past date: persist to that day's key without touching today's store state
-      const existing = loadLocalIntakes(entryDateKey)
-      saveLocalIntakes(entryDateKey, [...existing, newEntry])
-    }
 
-    if (firebaseReady && firestoreDb && userId) {
-      try {
-        const { collection, addDoc, Timestamp } = await import('firebase/firestore')
-        const intakesRef = collection(firestoreDb, 'users', userId, 'intakes')
-        await addDoc(intakesRef, {
-          amount: entry.amount,
-          timestamp: Timestamp.fromDate(new Date(entry.timestamp)),
-          note: entry.note || null,
-          mood: entry.mood || null,
-        })
-      } catch (err) {
-        console.error('Failed to save to Firestore:', err)
+      if (firebaseReady && firestoreDb && userId) {
+        try {
+          const { doc, updateDoc, Timestamp } = await import('firebase/firestore')
+          const ref = doc(firestoreDb, 'users', userId, 'intakes', id)
+          const patch: Record<string, unknown> = {}
+          if (updates.amount !== undefined) patch.amount = updates.amount
+          if (updates.mood !== undefined) patch.mood = updates.mood || null
+          if (updates.note !== undefined) patch.note = updates.note || null
+          if (updates.timestamp !== undefined)
+            patch.timestamp = Timestamp.fromDate(new Date(updates.timestamp))
+          if (Object.keys(patch).length > 0) await updateDoc(ref, patch)
+        } catch (err) {
+          console.error('Failed to update in Firestore:', err)
+        }
       }
-    }
-  }, [todayIntakes, setTodayIntakes, firebaseReady, firestoreDb, userId])
+    },
+    [todayIntakes, setTodayIntakes, firebaseReady, firestoreDb, userId]
+  )
 
-  const updateIntake = useCallback(async (id: string, updates: Partial<Omit<IntakeEntry, 'id'>>) => {
-    const todayKey = getTodayKey()
-    const updated = todayIntakes.map(e => e.id === id ? { ...e, ...updates } : e)
-    setTodayIntakes(updated)
-    saveLocalIntakes(todayKey, updated)
-
-    if (firebaseReady && firestoreDb && userId) {
-      try {
-        const { doc, updateDoc, Timestamp } = await import('firebase/firestore')
-        const ref = doc(firestoreDb, 'users', userId, 'intakes', id)
-        const patch: Record<string, unknown> = {}
-        if (updates.amount !== undefined) patch.amount = updates.amount
-        if (updates.mood !== undefined) patch.mood = updates.mood || null
-        if (updates.note !== undefined) patch.note = updates.note || null
-        if (updates.timestamp !== undefined) patch.timestamp = Timestamp.fromDate(new Date(updates.timestamp))
-        if (Object.keys(patch).length > 0) await updateDoc(ref, patch)
-      } catch (err) {
-        console.error('Failed to update in Firestore:', err)
+  const updatePlan = useCallback(
+    async (plan: TaperPlan) => {
+      // Update current daily target based on today
+      const updatedPlan: TaperPlan = {
+        ...plan,
+        currentDailyTarget: getDailyTargetForDate(plan, new Date()),
       }
-    }
-  }, [todayIntakes, setTodayIntakes, firebaseReady, firestoreDb, userId])
 
-  const updatePlan = useCallback(async (plan: TaperPlan) => {
-    // Update current daily target based on today
-    const updatedPlan: TaperPlan = {
-      ...plan,
-      currentDailyTarget: getDailyTargetForDate(plan, new Date()),
-    }
+      setTaperPlan(updatedPlan)
+      saveLocalPlan(updatedPlan)
 
-    setTaperPlan(updatedPlan)
-    saveLocalPlan(updatedPlan)
-
-    if (firebaseReady && firestoreDb && userId) {
-      try {
-        const { doc, setDoc } = await import('firebase/firestore')
-        const planRef = doc(firestoreDb, 'users', userId, 'data', 'plan')
-        await setDoc(planRef, updatedPlan)
-      } catch (err) {
-        console.error('Failed to save plan to Firestore:', err)
+      if (firebaseReady && firestoreDb && userId) {
+        try {
+          const { doc, setDoc } = await import('firebase/firestore')
+          const planRef = doc(firestoreDb, 'users', userId, 'data', 'plan')
+          await setDoc(planRef, updatedPlan)
+        } catch (err) {
+          console.error('Failed to save plan to Firestore:', err)
+        }
       }
-    }
-  }, [setTaperPlan, firebaseReady, firestoreDb, userId])
+    },
+    [setTaperPlan, firebaseReady, firestoreDb, userId]
+  )
 
-  const getHistoryIntakes = useCallback(async (dateKey: string): Promise<IntakeEntry[]> => {
-    // Try Firestore first
-    if (firebaseReady && firestoreDb && userId) {
-      try {
-        const { collection, query, where, getDocs, Timestamp } = await import('firebase/firestore')
-        const date = new Date(dateKey)
-        const startOfDay = new Date(date)
-        startOfDay.setHours(0, 0, 0, 0)
-        const endOfDay = new Date(date)
-        endOfDay.setHours(23, 59, 59, 999)
+  const getHistoryIntakes = useCallback(
+    async (dateKey: string): Promise<IntakeEntry[]> => {
+      // Try Firestore first
+      if (firebaseReady && firestoreDb && userId) {
+        try {
+          const { collection, query, where, getDocs, Timestamp } =
+            await import('firebase/firestore')
+          const date = new Date(dateKey)
+          const startOfDay = new Date(date)
+          startOfDay.setHours(0, 0, 0, 0)
+          const endOfDay = new Date(date)
+          endOfDay.setHours(23, 59, 59, 999)
 
-        const intakesRef = collection(firestoreDb, 'users', userId, 'intakes')
-        const q = query(
-          intakesRef,
-          where('timestamp', '>=', Timestamp.fromDate(startOfDay)),
-          where('timestamp', '<=', Timestamp.fromDate(endOfDay))
-        )
-        const snap = await getDocs(q)
-        return snap.docs.map((d) => {
-          const data = d.data()
-          return {
-            id: d.id,
-            amount: data.amount,
-            timestamp: (data.timestamp as import('firebase/firestore').Timestamp).toDate(),
-            note: data.note,
-            mood: data.mood,
-          }
-        })
-      } catch {
-        // Fall back to local
+          const intakesRef = collection(firestoreDb, 'users', userId, 'intakes')
+          const q = query(
+            intakesRef,
+            where('timestamp', '>=', Timestamp.fromDate(startOfDay)),
+            where('timestamp', '<=', Timestamp.fromDate(endOfDay))
+          )
+          const snap = await getDocs(q)
+          return snap.docs.map((d) => {
+            const data = d.data()
+            return {
+              id: d.id,
+              amount: data.amount,
+              timestamp: (data.timestamp as import('firebase/firestore').Timestamp).toDate(),
+              note: data.note,
+              mood: data.mood,
+            }
+          })
+        } catch {
+          // Fall back to local
+        }
       }
-    }
 
-    return loadLocalIntakesForDate(dateKey)
-  }, [firebaseReady, firestoreDb, userId])
+      return loadLocalIntakesForDate(dateKey)
+    },
+    [firebaseReady, firestoreDb, userId]
+  )
 
   return {
     userId,

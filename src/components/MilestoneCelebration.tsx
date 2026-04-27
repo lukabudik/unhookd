@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import * as LucideIcons from 'lucide-react'
 import { Milestone } from '@/lib/milestones'
@@ -11,15 +11,19 @@ interface Props {
 }
 
 function Particles({ color }: { color: string }) {
-  const particles = Array.from({ length: 12 }, (_, i) => {
-    const angle = (i / 12) * 360
-    const distance = 80 + Math.random() * 60
-    const x = Math.cos((angle * Math.PI) / 180) * distance
-    const y = Math.sin((angle * Math.PI) / 180) * distance
-    const size = 4 + Math.random() * 6
-    const delay = Math.random() * 0.3
-    return { x, y, size, delay, angle }
-  })
+  const particles = useMemo(
+    () =>
+      Array.from({ length: 12 }, (_, i) => {
+        const angle = (i / 12) * 360
+        const distance = 80 + Math.random() * 60
+        const x = Math.cos((angle * Math.PI) / 180) * distance
+        const y = Math.sin((angle * Math.PI) / 180) * distance
+        const size = 4 + Math.random() * 6
+        const delay = Math.random() * 0.3
+        return { x, y, size, delay, angle }
+      }),
+    []
+  )
 
   return (
     <div
@@ -136,8 +140,12 @@ export function MilestoneCelebration({ milestone, onDismiss }: Props) {
                 }}
               >
                 {(() => {
-                  const Icon = (LucideIcons as unknown as Record<string, LucideIcons.LucideIcon>)[milestone.icon]
-                  return Icon ? <Icon size={40} color={milestone.accentColor} strokeWidth={1.5} /> : null
+                  const Icon = (LucideIcons as unknown as Record<string, LucideIcons.LucideIcon>)[
+                    milestone.icon
+                  ]
+                  return Icon ? (
+                    <Icon size={40} color={milestone.accentColor} strokeWidth={1.5} />
+                  ) : null
                 })()}
               </motion.div>
               <Particles color={milestone.accentColor} />

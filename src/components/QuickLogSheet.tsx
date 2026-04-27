@@ -25,7 +25,6 @@ const MOODS: { value: Mood; Icon: LucideIcon }[] = [
   { value: 'good', Icon: Smile },
 ]
 
-
 const HALT_OPTIONS = [
   { key: 'H', label: 'Hungry', Icon: Utensils },
   { key: 'A', label: 'Anxious', Icon: Brain },
@@ -33,7 +32,15 @@ const HALT_OPTIONS = [
   { key: 'T', label: 'Tired', Icon: Moon },
 ]
 
-export function QuickLogSheet({ isOpen, dailyTarget, todayTotal = 0, lastDoseAt, onLog, onSuccess, onDismiss }: QuickLogSheetProps) {
+export function QuickLogSheet({
+  isOpen,
+  dailyTarget,
+  todayTotal = 0,
+  lastDoseAt,
+  onLog,
+  onSuccess,
+  onDismiss,
+}: QuickLogSheetProps) {
   const [selected, setSelected] = useState<number | null>(null)
   const [mood, setMood] = useState<Mood | null>(null)
   const [isLogging, setIsLogging] = useState(false)
@@ -53,8 +60,12 @@ export function QuickLogSheet({ isOpen, dailyTarget, todayTotal = 0, lastDoseAt,
     onDismiss()
   }
 
+  const lastDoseMinsAgo = lastDoseAt
+    ? Math.floor((Date.now() - new Date(lastDoseAt).getTime()) / 60000)
+    : null
+
   function toggleHalt(key: string) {
-    setHaltSelected(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key])
+    setHaltSelected((prev) => (prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]))
   }
 
   async function handleLog(skipHalt = false) {
@@ -154,11 +165,26 @@ export function QuickLogSheet({ isOpen, dailyTarget, todayTotal = 0, lastDoseAt,
                   style={{ display: 'flex', flexDirection: 'column', gap: 16 }}
                 >
                   <div>
-                    <h3 style={{ margin: '0 0 4px 0', fontSize: 17, fontWeight: 700, color: 'var(--text-primary)' }}>
+                    <h3
+                      style={{
+                        margin: '0 0 4px 0',
+                        fontSize: 17,
+                        fontWeight: 700,
+                        color: 'var(--text-primary)',
+                      }}
+                    >
                       Quick check-in
                     </h3>
-                    <p style={{ margin: 0, fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                      You&apos;d be going over today&apos;s goal. That&apos;s okay — just take a breath first. What&apos;s going on?
+                    <p
+                      style={{
+                        margin: 0,
+                        fontSize: 13,
+                        color: 'var(--text-secondary)',
+                        lineHeight: 1.5,
+                      }}
+                    >
+                      You&apos;d be going over today&apos;s goal. That&apos;s okay — just take a
+                      breath first. What&apos;s going on?
                     </p>
                   </div>
 
@@ -183,8 +209,18 @@ export function QuickLogSheet({ isOpen, dailyTarget, todayTotal = 0, lastDoseAt,
                             transition: 'all 0.15s',
                           }}
                         >
-                          <Icon size={20} color={isOn ? 'var(--primary)' : 'var(--text-secondary)'} strokeWidth={1.75} />
-                          <span style={{ fontSize: 12, color: isOn ? 'var(--primary)' : 'var(--text-secondary)', fontWeight: isOn ? 700 : 400 }}>
+                          <Icon
+                            size={20}
+                            color={isOn ? 'var(--primary)' : 'var(--text-secondary)'}
+                            strokeWidth={1.75}
+                          />
+                          <span
+                            style={{
+                              fontSize: 12,
+                              color: isOn ? 'var(--primary)' : 'var(--text-secondary)',
+                              fontWeight: isOn ? 700 : 400,
+                            }}
+                          >
                             {label}
                           </span>
                         </button>
@@ -192,8 +228,17 @@ export function QuickLogSheet({ isOpen, dailyTarget, todayTotal = 0, lastDoseAt,
                     })}
                   </div>
 
-                  <p style={{ margin: 0, fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.55, fontStyle: 'italic' }}>
-                    These feelings are real and temporary. Logging honestly is always the right move.
+                  <p
+                    style={{
+                      margin: 0,
+                      fontSize: 12,
+                      color: 'var(--text-secondary)',
+                      lineHeight: 1.55,
+                      fontStyle: 'italic',
+                    }}
+                  >
+                    These feelings are real and temporary. Logging honestly is always the right
+                    move.
                   </p>
 
                   <button
@@ -270,25 +315,42 @@ export function QuickLogSheet({ isOpen, dailyTarget, todayTotal = 0, lastDoseAt,
                   style={{ display: 'flex', flexDirection: 'column', gap: 20 }}
                 >
                   {/* Title row */}
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                    }}
+                  >
                     <div>
-                      <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+                      <h2
+                        style={{
+                          fontSize: 20,
+                          fontWeight: 700,
+                          color: 'var(--text-primary)',
+                          margin: 0,
+                        }}
+                      >
                         Quick log
                       </h2>
-                      <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '2px 0 0 0' }}>
+                      <p
+                        style={{
+                          fontSize: 12,
+                          color: 'var(--text-secondary)',
+                          margin: '2px 0 0 0',
+                        }}
+                      >
                         Target today: {dailyTarget}g
                       </p>
-                      {lastDoseAt && (() => {
-                        const minsAgo = Math.floor((Date.now() - new Date(lastDoseAt).getTime()) / 60000)
-                        if (minsAgo < 120) {
-                          return (
-                            <p style={{ fontSize: 11, color: '#e8a87c', margin: '3px 0 0 0' }}>
-                              ⏱ Last dose {minsAgo < 60 ? `${minsAgo}m` : `${Math.floor(minsAgo / 60)}h ${minsAgo % 60}m`} ago
-                            </p>
-                          )
-                        }
-                        return null
-                      })()}
+                      {lastDoseMinsAgo !== null && lastDoseMinsAgo < 120 && (
+                        <p style={{ fontSize: 11, color: '#e8a87c', margin: '3px 0 0 0' }}>
+                          ⏱ Last dose{' '}
+                          {lastDoseMinsAgo < 60
+                            ? `${lastDoseMinsAgo}m`
+                            : `${Math.floor(lastDoseMinsAgo / 60)}h ${lastDoseMinsAgo % 60}m`}{' '}
+                          ago
+                        </p>
+                      )}
                     </div>
                     <div style={{ display: 'flex', gap: 6 }}>
                       {MOODS.map(({ value, Icon }) => (
@@ -299,7 +361,8 @@ export function QuickLogSheet({ isOpen, dailyTarget, todayTotal = 0, lastDoseAt,
                             width: 40,
                             height: 40,
                             borderRadius: 12,
-                            backgroundColor: mood === value ? 'rgba(232,168,124,0.15)' : 'var(--bg)',
+                            backgroundColor:
+                              mood === value ? 'rgba(232,168,124,0.15)' : 'var(--bg)',
                             border: `1px solid ${mood === value ? 'var(--primary)' : 'var(--border)'}`,
                             cursor: 'pointer',
                             transition: 'all 0.15s ease',
@@ -308,7 +371,11 @@ export function QuickLogSheet({ isOpen, dailyTarget, todayTotal = 0, lastDoseAt,
                             justifyContent: 'center',
                           }}
                         >
-                          <Icon size={20} color={mood === value ? 'var(--primary)' : 'var(--text-secondary)'} strokeWidth={1.75} />
+                          <Icon
+                            size={20}
+                            color={mood === value ? 'var(--primary)' : 'var(--text-secondary)'}
+                            strokeWidth={1.75}
+                          />
                         </button>
                       ))}
                     </div>
@@ -337,7 +404,8 @@ export function QuickLogSheet({ isOpen, dailyTarget, todayTotal = 0, lastDoseAt,
                             fontWeight: isSelected ? 800 : 500,
                             fontSize: 20,
                             border: `1.5px solid ${isSelected ? 'var(--primary)' : 'var(--border)'}`,
-                            transition: 'background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease',
+                            transition:
+                              'background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease',
                             cursor: 'pointer',
                             letterSpacing: '-0.02em',
                           }}

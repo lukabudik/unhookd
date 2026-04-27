@@ -193,7 +193,6 @@ export function useNotifications() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return
-    /* eslint-disable react-hooks/set-state-in-effect */
     if (!('Notification' in window)) {
       setPermission('unsupported')
       return
@@ -201,7 +200,6 @@ export function useNotifications() {
     setPermission(Notification.permission as NotifPermission)
     const stored = localStorage.getItem(REMINDER_KEY)
     if (stored) setReminderTimeState(stored)
-    /* eslint-enable react-hooks/set-state-in-effect */
   }, [])
 
   // Declare callbacks first so the schedulers below can reference them

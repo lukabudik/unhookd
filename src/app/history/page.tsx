@@ -6,7 +6,13 @@ import { useAppStore } from '@/lib/store'
 import { useFirestore } from '@/hooks/useFirestore'
 import { IntakeEntry } from '@/lib/store'
 import { IntakeChart } from '@/components/IntakeChart'
-import { getPastDates, dateToKey, formatGrams, getDailyTargetForDate, getPresets } from '@/lib/utils'
+import {
+  getPastDates,
+  dateToKey,
+  formatGrams,
+  getDailyTargetForDate,
+  getPresets,
+} from '@/lib/utils'
 import { format } from 'date-fns'
 import { Flame, Frown, Meh, Smile, SmilePlus, LucideIcon } from 'lucide-react'
 
@@ -26,7 +32,12 @@ const MOOD_ICON: Record<string, LucideIcon> = {
 function MoodIndicator({ mood }: { mood: string }) {
   const Icon = MOOD_ICON[mood]
   if (!Icon) return null
-  const color = mood === 'good' || mood === 'great' ? 'var(--success)' : mood === 'awful' || mood === 'rough' ? '#e8a87c' : 'var(--text-secondary)'
+  const color =
+    mood === 'good' || mood === 'great'
+      ? 'var(--success)'
+      : mood === 'awful' || mood === 'rough'
+        ? '#e8a87c'
+        : 'var(--text-secondary)'
   return <Icon size={14} color={color} strokeWidth={1.75} />
 }
 
@@ -62,7 +73,10 @@ export default function HistoryPage() {
   const [historyData, setHistoryData] = useState<DayData[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedDay, setSelectedDay] = useState<DayData | null>(null)
-  const [editingHistEntry, setEditingHistEntry] = useState<{ entry: IntakeEntry; dayKey: string } | null>(null)
+  const [editingHistEntry, setEditingHistEntry] = useState<{
+    entry: IntakeEntry
+    dayKey: string
+  } | null>(null)
   const [showAddForDay, setShowAddForDay] = useState(false)
 
   const loadHistory = useCallback(async () => {
@@ -77,7 +91,11 @@ export default function HistoryPage() {
         if (typeof window !== 'undefined') {
           const raw = localStorage.getItem(`unhookd_checkin_${key}`)
           if (raw) {
-            try { checkIn = JSON.parse(raw) } catch { /* ignore */ }
+            try {
+              checkIn = JSON.parse(raw)
+            } catch {
+              /* ignore */
+            }
           }
         }
         return { date, total, target, key, checkIn, intakes }
@@ -87,25 +105,37 @@ export default function HistoryPage() {
     setLoading(false)
   }, [taperPlan, getHistoryIntakes])
 
-  useEffect(() => { loadHistory() }, [loadHistory])
+  useEffect(() => {
+    loadHistory()
+  }, [loadHistory])
 
   // Refresh selected day data after mutations
   function refreshSelectedDay(dayKey: string) {
     const intakes = loadLocalIntakesRaw(dayKey)
     const total = intakes.reduce((sum, e) => sum + e.amount, 0)
-    setHistoryData(prev => prev.map(d => d.key === dayKey ? { ...d, intakes, total } : d))
-    setSelectedDay(prev => prev?.key === dayKey ? { ...prev, intakes, total } : prev)
+    setHistoryData((prev) => prev.map((d) => (d.key === dayKey ? { ...d, intakes, total } : d)))
+    setSelectedDay((prev) => (prev?.key === dayKey ? { ...prev, intakes, total } : prev))
   }
 
   function deleteHistoricalIntake(dayKey: string, id: string) {
     const existing = loadLocalIntakesRaw(dayKey)
-    saveLocalIntakesRaw(dayKey, existing.filter(e => e.id !== id))
+    saveLocalIntakesRaw(
+      dayKey,
+      existing.filter((e) => e.id !== id)
+    )
     refreshSelectedDay(dayKey)
   }
 
-  function saveHistoricalEdit(dayKey: string, id: string, updates: Partial<Omit<IntakeEntry, 'id'>>) {
+  function saveHistoricalEdit(
+    dayKey: string,
+    id: string,
+    updates: Partial<Omit<IntakeEntry, 'id'>>
+  ) {
     const existing = loadLocalIntakesRaw(dayKey)
-    saveLocalIntakesRaw(dayKey, existing.map(e => e.id === id ? { ...e, ...updates } : e))
+    saveLocalIntakesRaw(
+      dayKey,
+      existing.map((e) => (e.id === id ? { ...e, ...updates } : e))
+    )
     setEditingHistEntry(null)
     refreshSelectedDay(dayKey)
   }
@@ -133,7 +163,14 @@ export default function HistoryPage() {
       >
         {/* Header */}
         <div>
-          <h1 style={{ fontSize: 26, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 4px 0' }}>
+          <h1
+            style={{
+              fontSize: 26,
+              fontWeight: 700,
+              color: 'var(--text-primary)',
+              margin: '0 0 4px 0',
+            }}
+          >
             History
           </h1>
           <p style={{ fontSize: 14, color: 'var(--text-secondary)', margin: 0 }}>
@@ -158,11 +195,25 @@ export default function HistoryPage() {
               gap: 16,
             }}
           >
-            <div style={{ width: 56, height: 56, borderRadius: 16, backgroundColor: 'rgba(127,176,105,0.15)', border: '1px solid rgba(127,176,105,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <div
+              style={{
+                width: 56,
+                height: 56,
+                borderRadius: 16,
+                backgroundColor: 'rgba(127,176,105,0.15)',
+                border: '1px solid rgba(127,176,105,0.3)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}
+            >
               <Flame size={28} color="var(--success)" strokeWidth={1.75} />
             </div>
             <div>
-              <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--success)', lineHeight: 1 }}>
+              <div
+                style={{ fontSize: 28, fontWeight: 800, color: 'var(--success)', lineHeight: 1 }}
+              >
                 {streak}-day streak
               </div>
               <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4 }}>
@@ -174,7 +225,17 @@ export default function HistoryPage() {
 
         {/* Chart */}
         {loading ? (
-          <div style={{ backgroundColor: 'var(--surface)', borderRadius: 20, padding: 40, border: '1px solid var(--border)', textAlign: 'center', color: 'var(--text-secondary)', fontSize: 14 }}>
+          <div
+            style={{
+              backgroundColor: 'var(--surface)',
+              borderRadius: 20,
+              padding: 40,
+              border: '1px solid var(--border)',
+              textAlign: 'center',
+              color: 'var(--text-secondary)',
+              fontSize: 14,
+            }}
+          >
             Loading history...
           </div>
         ) : (
@@ -183,14 +244,32 @@ export default function HistoryPage() {
 
         {/* 30-day list */}
         <div>
-          <h2 style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-secondary)', margin: '0 0 12px 0', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+          <h2
+            style={{
+              fontSize: 15,
+              fontWeight: 600,
+              color: 'var(--text-secondary)',
+              margin: '0 0 12px 0',
+              letterSpacing: '0.04em',
+              textTransform: 'uppercase',
+            }}
+          >
             Past 30 days
           </h2>
 
           {loading ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} style={{ height: 60, backgroundColor: 'var(--surface)', borderRadius: 14, border: '1px solid var(--border)', opacity: 0.5 }} />
+                <div
+                  key={i}
+                  style={{
+                    height: 60,
+                    backgroundColor: 'var(--surface)',
+                    borderRadius: 14,
+                    border: '1px solid var(--border)',
+                    opacity: 0.5,
+                  }}
+                />
               ))}
             </div>
           ) : (
@@ -227,13 +306,34 @@ export default function HistoryPage() {
                     }}
                   >
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 14, fontWeight: isToday ? 700 : 500, color: isToday ? 'var(--primary)' : 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <div
+                        style={{
+                          fontSize: 14,
+                          fontWeight: isToday ? 700 : 500,
+                          color: isToday ? 'var(--primary)' : 'var(--text-primary)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 6,
+                        }}
+                      >
                         {isToday ? 'Today' : format(day.date, 'EEEE, MMM d')}
-                        {day.checkIn && <span style={{ fontSize: 14 }} title={`Feeling ${day.checkIn.mood}`}><MoodIndicator mood={day.checkIn.mood} /></span>}
+                        {day.checkIn && (
+                          <span style={{ fontSize: 14 }} title={`Feeling ${day.checkIn.mood}`}>
+                            <MoodIndicator mood={day.checkIn.mood} />
+                          </span>
+                        )}
                       </div>
                       <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>
                         {day.checkIn?.note ? (
-                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block', maxWidth: 180 }}>
+                          <span
+                            style={{
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                              display: 'block',
+                              maxWidth: 180,
+                            }}
+                          >
                             {day.checkIn.note}
                           </span>
                         ) : (
@@ -242,11 +342,22 @@ export default function HistoryPage() {
                       </div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <div style={{ fontSize: 18, fontWeight: 700, color: statusColor, display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <div
+                        style={{
+                          fontSize: 18,
+                          fontWeight: 700,
+                          color: statusColor,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 6,
+                        }}
+                      >
                         <span style={{ fontSize: 10 }}>{statusDot}</span>
                         {isZero ? '—' : formatGrams(day.total)}
                       </div>
-                      <span style={{ fontSize: 12, color: 'var(--text-secondary)', opacity: 0.5 }}>›</span>
+                      <span style={{ fontSize: 12, color: 'var(--text-secondary)', opacity: 0.5 }}>
+                        ›
+                      </span>
                     </div>
                   </motion.div>
                 )
@@ -262,46 +373,131 @@ export default function HistoryPage() {
           <>
             <motion.div
               key="day-backdrop"
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              onClick={() => { setSelectedDay(null); setEditingHistEntry(null); setShowAddForDay(false) }}
-              style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 300, backdropFilter: 'blur(2px)' }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => {
+                setSelectedDay(null)
+                setEditingHistEntry(null)
+                setShowAddForDay(false)
+              }}
+              style={{
+                position: 'fixed',
+                inset: 0,
+                backgroundColor: 'rgba(0,0,0,0.6)',
+                zIndex: 300,
+                backdropFilter: 'blur(2px)',
+              }}
             />
             <motion.div
               key="day-sheet"
-              initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
               transition={{ type: 'spring', stiffness: 360, damping: 36 }}
               style={{
-                position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 301,
-                backgroundColor: 'var(--surface)', borderRadius: '24px 24px 0 0',
-                padding: '12px 20px 48px', maxHeight: '85vh', overflowY: 'auto',
+                position: 'fixed',
+                bottom: 0,
+                left: 0,
+                right: 0,
+                zIndex: 301,
+                backgroundColor: 'var(--surface)',
+                borderRadius: '24px 24px 0 0',
+                padding: '12px 20px 48px',
+                maxHeight: '85vh',
+                overflowY: 'auto',
               }}
             >
-              <div style={{ width: 36, height: 4, backgroundColor: 'var(--border)', borderRadius: 2, margin: '0 auto 16px' }} />
+              <div
+                style={{
+                  width: 36,
+                  height: 4,
+                  backgroundColor: 'var(--border)',
+                  borderRadius: 2,
+                  margin: '0 auto 16px',
+                }}
+              />
 
               {/* Sheet header */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: 16,
+                }}
+              >
                 <div>
-                  <h3 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: 'var(--text-primary)' }}>
-                    {dateToKey(selectedDay.date) === dateToKey(new Date()) ? 'Today' : format(selectedDay.date, 'EEEE, MMMM d')}
+                  <h3
+                    style={{
+                      margin: 0,
+                      fontSize: 17,
+                      fontWeight: 700,
+                      color: 'var(--text-primary)',
+                    }}
+                  >
+                    {dateToKey(selectedDay.date) === dateToKey(new Date())
+                      ? 'Today'
+                      : format(selectedDay.date, 'EEEE, MMMM d')}
                   </h3>
                   <p style={{ margin: '2px 0 0 0', fontSize: 12, color: 'var(--text-secondary)' }}>
-                    Target: {formatGrams(selectedDay.target)} · Logged: {selectedDay.total > 0 ? formatGrams(selectedDay.total) : 'nothing'}
+                    Target: {formatGrams(selectedDay.target)} · Logged:{' '}
+                    {selectedDay.total > 0 ? formatGrams(selectedDay.total) : 'nothing'}
                   </p>
                 </div>
-                <button onClick={() => { setSelectedDay(null); setEditingHistEntry(null); setShowAddForDay(false) }}
-                  style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: 22, cursor: 'pointer', padding: 0 }}>×</button>
+                <button
+                  onClick={() => {
+                    setSelectedDay(null)
+                    setEditingHistEntry(null)
+                    setShowAddForDay(false)
+                  }}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: 'var(--text-secondary)',
+                    fontSize: 22,
+                    cursor: 'pointer',
+                    padding: 0,
+                  }}
+                >
+                  ×
+                </button>
               </div>
 
               {/* Mood check-in */}
               {selectedDay.checkIn && (
-                <div style={{ backgroundColor: 'var(--bg)', borderRadius: 12, padding: '10px 14px', marginBottom: 16, display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                <div
+                  style={{
+                    backgroundColor: 'var(--bg)',
+                    borderRadius: 12,
+                    padding: '10px 14px',
+                    marginBottom: 16,
+                    display: 'flex',
+                    gap: 10,
+                    alignItems: 'flex-start',
+                  }}
+                >
                   <MoodIndicator mood={selectedDay.checkIn.mood} />
                   <div>
-                    <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>
+                    <p
+                      style={{
+                        margin: 0,
+                        fontSize: 13,
+                        fontWeight: 600,
+                        color: 'var(--text-primary)',
+                      }}
+                    >
                       Feeling {selectedDay.checkIn.mood}
                     </p>
                     {selectedDay.checkIn.note && (
-                      <p style={{ margin: '2px 0 0 0', fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                      <p
+                        style={{
+                          margin: '2px 0 0 0',
+                          fontSize: 12,
+                          color: 'var(--text-secondary)',
+                          lineHeight: 1.4,
+                        }}
+                      >
                         {selectedDay.checkIn.note}
                       </p>
                     )}
@@ -311,13 +507,22 @@ export default function HistoryPage() {
 
               {/* Individual doses */}
               {selectedDay.intakes.length === 0 ? (
-                <p style={{ fontSize: 14, color: 'var(--text-secondary)', textAlign: 'center', padding: '20px 0' }}>
+                <p
+                  style={{
+                    fontSize: 14,
+                    color: 'var(--text-secondary)',
+                    textAlign: 'center',
+                    padding: '20px 0',
+                  }}
+                >
                   No doses logged for this day.
                 </p>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
                   {[...selectedDay.intakes]
-                    .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
+                    .sort(
+                      (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+                    )
                     .map((intake) => {
                       const isEditing = editingHistEntry?.entry.id === intake.id
 
@@ -327,7 +532,9 @@ export default function HistoryPage() {
                             key={intake.id}
                             entry={intake}
                             dailyTarget={selectedDay.target}
-                            onSave={(updates) => saveHistoricalEdit(selectedDay.key, intake.id, updates)}
+                            onSave={(updates) =>
+                              saveHistoricalEdit(selectedDay.key, intake.id, updates)
+                            }
                             onCancel={() => setEditingHistEntry(null)}
                           />
                         )
@@ -337,36 +544,87 @@ export default function HistoryPage() {
                         <div
                           key={intake.id}
                           style={{
-                            backgroundColor: 'var(--bg)', borderRadius: 12, padding: '10px 12px',
-                            border: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8,
+                            backgroundColor: 'var(--bg)',
+                            borderRadius: 12,
+                            padding: '10px 12px',
+                            border: '1px solid var(--border)',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            gap: 8,
                           }}
                         >
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                              <span style={{ fontWeight: 700, fontSize: 17, color: 'var(--primary)' }}>{formatGrams(intake.amount)}</span>
+                              <span
+                                style={{ fontWeight: 700, fontSize: 17, color: 'var(--primary)' }}
+                              >
+                                {formatGrams(intake.amount)}
+                              </span>
                               {intake.mood === 'rough' && <span>😣</span>}
                               {intake.mood === 'okay' && <span>😐</span>}
                               {intake.mood === 'good' && <span>🙂</span>}
                             </div>
                             {intake.note && (
-                              <p style={{ margin: '3px 0 0 0', fontSize: 12, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              <p
+                                style={{
+                                  margin: '3px 0 0 0',
+                                  fontSize: 12,
+                                  color: 'var(--text-secondary)',
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  whiteSpace: 'nowrap',
+                                }}
+                              >
                                 {intake.note}
                               </p>
                             )}
                           </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                          <div
+                            style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}
+                          >
                             <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
                               {format(new Date(intake.timestamp), 'h:mm a')}
                             </span>
                             <button
-                              onClick={() => setEditingHistEntry({ entry: intake, dayKey: selectedDay.key })}
-                              style={{ width: 26, height: 26, borderRadius: 8, border: '1px solid var(--border)', backgroundColor: 'transparent', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, padding: 0, flexShrink: 0 }}
+                              onClick={() =>
+                                setEditingHistEntry({ entry: intake, dayKey: selectedDay.key })
+                              }
+                              style={{
+                                width: 26,
+                                height: 26,
+                                borderRadius: 8,
+                                border: '1px solid var(--border)',
+                                backgroundColor: 'transparent',
+                                color: 'var(--text-secondary)',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: 12,
+                                padding: 0,
+                                flexShrink: 0,
+                              }}
                             >
                               ✎
                             </button>
                             <button
                               onClick={() => deleteHistoricalIntake(selectedDay.key, intake.id)}
-                              style={{ width: 26, height: 26, borderRadius: 8, border: '1px solid var(--border)', backgroundColor: 'transparent', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, padding: 0, flexShrink: 0 }}
+                              style={{
+                                width: 26,
+                                height: 26,
+                                borderRadius: 8,
+                                border: '1px solid var(--border)',
+                                backgroundColor: 'transparent',
+                                color: 'var(--text-secondary)',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: 14,
+                                padding: 0,
+                                flexShrink: 0,
+                              }}
                             >
                               ×
                             </button>
@@ -381,7 +639,11 @@ export default function HistoryPage() {
               {showAddForDay ? (
                 <AddDoseForDay
                   date={selectedDay.date}
-                  onLog={async (entry) => { await addIntake(entry); refreshSelectedDay(selectedDay.key); setShowAddForDay(false) }}
+                  onLog={async (entry) => {
+                    await addIntake(entry)
+                    refreshSelectedDay(selectedDay.key)
+                    setShowAddForDay(false)
+                  }}
                   onCancel={() => setShowAddForDay(false)}
                   dailyTarget={selectedDay.target}
                 />
@@ -389,8 +651,15 @@ export default function HistoryPage() {
                 <button
                   onClick={() => setShowAddForDay(true)}
                   style={{
-                    width: '100%', height: 44, borderRadius: 12, backgroundColor: 'transparent', border: '1px dashed var(--border)',
-                    color: 'var(--text-secondary)', fontSize: 14, cursor: 'pointer', fontWeight: 500,
+                    width: '100%',
+                    height: 44,
+                    borderRadius: 12,
+                    backgroundColor: 'transparent',
+                    border: '1px dashed var(--border)',
+                    color: 'var(--text-secondary)',
+                    fontSize: 14,
+                    cursor: 'pointer',
+                    fontWeight: 500,
                   }}
                 >
                   + Add dose for this day
@@ -426,43 +695,118 @@ function HistoryEntryEditor({
   const finalAmount = useCustom ? parseFloat(customAmount) || 0 : amount || 0
 
   return (
-    <div style={{ backgroundColor: 'rgba(232,168,124,0.06)', borderRadius: 12, padding: 12, border: '1px solid rgba(232,168,124,0.2)' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6, marginBottom: 8 }}>
+    <div
+      style={{
+        backgroundColor: 'rgba(232,168,124,0.06)',
+        borderRadius: 12,
+        padding: 12,
+        border: '1px solid rgba(232,168,124,0.2)',
+      }}
+    >
+      <div
+        style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6, marginBottom: 8 }}
+      >
         {presets.map((p: number) => {
           const sel = !useCustom && amount === p
           return (
-            <button key={p} onClick={() => { setAmount(p); setUseCustom(false) }}
-              style={{ height: 40, borderRadius: 10, fontSize: 15, fontWeight: sel ? 700 : 400, cursor: 'pointer',
-                backgroundColor: sel ? 'var(--primary)' : 'var(--bg)', color: sel ? 'var(--bg)' : 'var(--text-primary)',
-                border: `1px solid ${sel ? 'var(--primary)' : 'var(--border)'}` }}>
+            <button
+              key={p}
+              onClick={() => {
+                setAmount(p)
+                setUseCustom(false)
+              }}
+              style={{
+                height: 40,
+                borderRadius: 10,
+                fontSize: 15,
+                fontWeight: sel ? 700 : 400,
+                cursor: 'pointer',
+                backgroundColor: sel ? 'var(--primary)' : 'var(--bg)',
+                color: sel ? 'var(--bg)' : 'var(--text-primary)',
+                border: `1px solid ${sel ? 'var(--primary)' : 'var(--border)'}`,
+              }}
+            >
               {p}g
             </button>
           )
         })}
       </div>
       <div style={{ display: 'flex', gap: 6, marginBottom: 8, alignItems: 'center' }}>
-        <input type="number" step="0.1" min="0" placeholder="Custom" value={useCustom ? customAmount : ''}
+        <input
+          type="number"
+          step="0.1"
+          min="0"
+          placeholder="Custom"
+          value={useCustom ? customAmount : ''}
           onFocus={() => setUseCustom(true)}
-          onChange={e => { setUseCustom(true); setAmount(null); setCustomAmount(e.target.value) }}
-          style={{ flex: 1, height: 36, padding: '0 10px', borderRadius: 10, fontSize: 14, boxSizing: 'border-box',
-            backgroundColor: 'var(--bg)', color: 'var(--text-primary)', border: `1px solid ${useCustom ? 'var(--primary)' : 'var(--border)'}` }} />
-        {['rough', 'okay', 'good'].map(m => (
-          <button key={m} onClick={() => setMood(mood === m ? null : m)}
-            style={{ width: 36, height: 36, borderRadius: 10, fontSize: 18, cursor: 'pointer',
+          onChange={(e) => {
+            setUseCustom(true)
+            setAmount(null)
+            setCustomAmount(e.target.value)
+          }}
+          style={{
+            flex: 1,
+            height: 36,
+            padding: '0 10px',
+            borderRadius: 10,
+            fontSize: 14,
+            boxSizing: 'border-box',
+            backgroundColor: 'var(--bg)',
+            color: 'var(--text-primary)',
+            border: `1px solid ${useCustom ? 'var(--primary)' : 'var(--border)'}`,
+          }}
+        />
+        {['rough', 'okay', 'good'].map((m) => (
+          <button
+            key={m}
+            onClick={() => setMood(mood === m ? null : m)}
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 10,
+              fontSize: 18,
+              cursor: 'pointer',
               backgroundColor: mood === m ? 'rgba(232,168,124,0.15)' : 'var(--bg)',
-              border: `1px solid ${mood === m ? 'var(--primary)' : 'var(--border)'}` }}>
+              border: `1px solid ${mood === m ? 'var(--primary)' : 'var(--border)'}`,
+            }}
+          >
             {m === 'rough' ? '😣' : m === 'okay' ? '😐' : '🙂'}
           </button>
         ))}
       </div>
       <div style={{ display: 'flex', gap: 8 }}>
-        <button onClick={() => onSave({ amount: finalAmount, mood: mood as 'rough' | 'okay' | 'good' | undefined })}
+        <button
+          onClick={() =>
+            onSave({ amount: finalAmount, mood: mood as 'rough' | 'okay' | 'good' | undefined })
+          }
           disabled={finalAmount <= 0}
-          style={{ flex: 1, height: 36, borderRadius: 10, backgroundColor: 'var(--primary)', color: 'var(--bg)', fontWeight: 600, fontSize: 13, border: 'none', cursor: 'pointer' }}>
+          style={{
+            flex: 1,
+            height: 36,
+            borderRadius: 10,
+            backgroundColor: 'var(--primary)',
+            color: 'var(--bg)',
+            fontWeight: 600,
+            fontSize: 13,
+            border: 'none',
+            cursor: 'pointer',
+          }}
+        >
           Save
         </button>
-        <button onClick={onCancel}
-          style={{ height: 36, padding: '0 14px', borderRadius: 10, backgroundColor: 'transparent', color: 'var(--text-secondary)', fontSize: 13, border: '1px solid var(--border)', cursor: 'pointer' }}>
+        <button
+          onClick={onCancel}
+          style={{
+            height: 36,
+            padding: '0 14px',
+            borderRadius: 10,
+            backgroundColor: 'transparent',
+            color: 'var(--text-secondary)',
+            fontSize: 13,
+            border: '1px solid var(--border)',
+            cursor: 'pointer',
+          }}
+        >
           Cancel
         </button>
       </div>
@@ -485,7 +829,7 @@ function AddDoseForDay({
 }) {
   const presets: number[] = getPresets(dailyTarget)
   const [amount, setAmount] = useState<number | null>(null)
-  const [mood, setMood] = useState<string | null>(null)
+  const [mood] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
 
   async function handleAdd() {
@@ -498,28 +842,81 @@ function AddDoseForDay({
   }
 
   return (
-    <div style={{ backgroundColor: 'rgba(127,176,105,0.06)', borderRadius: 12, padding: 12, border: '1px solid rgba(127,176,105,0.2)', marginTop: 8 }}>
-      <p style={{ margin: '0 0 8px 0', fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>Add a missed dose</p>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6, marginBottom: 8 }}>
+    <div
+      style={{
+        backgroundColor: 'rgba(127,176,105,0.06)',
+        borderRadius: 12,
+        padding: 12,
+        border: '1px solid rgba(127,176,105,0.2)',
+        marginTop: 8,
+      }}
+    >
+      <p
+        style={{
+          margin: '0 0 8px 0',
+          fontSize: 13,
+          fontWeight: 600,
+          color: 'var(--text-secondary)',
+        }}
+      >
+        Add a missed dose
+      </p>
+      <div
+        style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6, marginBottom: 8 }}
+      >
         {presets.map((p: number) => {
           const sel = amount === p
           return (
-            <button key={p} onClick={() => setAmount(sel ? null : p)}
-              style={{ height: 40, borderRadius: 10, fontSize: 15, fontWeight: sel ? 700 : 400, cursor: 'pointer',
-                backgroundColor: sel ? 'var(--success)' : 'var(--bg)', color: sel ? '#1a1612' : 'var(--text-primary)',
-                border: `1px solid ${sel ? 'var(--success)' : 'var(--border)'}` }}>
+            <button
+              key={p}
+              onClick={() => setAmount(sel ? null : p)}
+              style={{
+                height: 40,
+                borderRadius: 10,
+                fontSize: 15,
+                fontWeight: sel ? 700 : 400,
+                cursor: 'pointer',
+                backgroundColor: sel ? 'var(--success)' : 'var(--bg)',
+                color: sel ? '#1a1612' : 'var(--text-primary)',
+                border: `1px solid ${sel ? 'var(--success)' : 'var(--border)'}`,
+              }}
+            >
               {p}g
             </button>
           )
         })}
       </div>
       <div style={{ display: 'flex', gap: 8 }}>
-        <button onClick={handleAdd} disabled={!amount || saving}
-          style={{ flex: 1, height: 36, borderRadius: 10, backgroundColor: amount ? 'var(--success)' : 'var(--border)', color: amount ? '#1a1612' : 'var(--text-secondary)', fontWeight: 600, fontSize: 13, border: 'none', cursor: amount ? 'pointer' : 'default' }}>
+        <button
+          onClick={handleAdd}
+          disabled={!amount || saving}
+          style={{
+            flex: 1,
+            height: 36,
+            borderRadius: 10,
+            backgroundColor: amount ? 'var(--success)' : 'var(--border)',
+            color: amount ? '#1a1612' : 'var(--text-secondary)',
+            fontWeight: 600,
+            fontSize: 13,
+            border: 'none',
+            cursor: amount ? 'pointer' : 'default',
+          }}
+        >
           {saving ? 'Adding...' : amount ? `Add ${amount}g` : 'Select amount'}
         </button>
-        <button onClick={onCancel}
-          style={{ height: 36, padding: '0 14px', borderRadius: 10, backgroundColor: 'transparent', color: 'var(--text-secondary)', fontSize: 13, border: '1px solid var(--border)', cursor: 'pointer' }}>
+        <button
+          onClick={onCancel}
+          style={{
+            height: 36,
+            padding: '0 14px',
+            borderRadius: 10,
+            backgroundColor: 'transparent',
+            color: 'var(--text-secondary)',
+            fontSize: 13,
+            border: '1px solid var(--border)',
+            cursor: 'pointer',
+          }}
+        >
           Cancel
         </button>
       </div>
