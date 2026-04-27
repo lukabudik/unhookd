@@ -23,7 +23,7 @@ import { PhaseGuidanceCard } from '@/components/PhaseGuidanceCard'
 import { QuickLogSheet } from '@/components/QuickLogSheet'
 import { DailyCheckIn } from '@/components/DailyCheckIn'
 import { format } from 'date-fns'
-import { Bell, Shield, Waves, Frown, Meh, Smile } from 'lucide-react'
+import { Bell, Shield, Waves, Frown, Meh, Smile, Pencil, X } from 'lucide-react'
 import Link from 'next/link'
 
 function MoodIcon({ mood }: { mood?: string }) {
@@ -673,13 +673,11 @@ export default function HomePage() {
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
-                              fontSize: 12,
-                              lineHeight: 1,
                               padding: 0,
                               flexShrink: 0,
                             }}
                           >
-                            ✎
+                            <Pencil size={13} strokeWidth={2} />
                           </button>
                           <button
                             onClick={() => deleteIntake(entry.id)}
@@ -695,13 +693,11 @@ export default function HomePage() {
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
-                              fontSize: 14,
-                              lineHeight: 1,
                               padding: 0,
                               flexShrink: 0,
                             }}
                           >
-                            ×
+                            <X size={14} strokeWidth={2} />
                           </button>
                         </div>
                       </motion.div>
@@ -776,10 +772,10 @@ export default function HomePage() {
 
 type Mood = 'rough' | 'okay' | 'good'
 
-const EDIT_MOODS: { value: Mood; emoji: string }[] = [
-  { value: 'rough', emoji: '😣' },
-  { value: 'okay', emoji: '😐' },
-  { value: 'good', emoji: '🙂' },
+const EDIT_MOODS: { value: Mood; Icon: typeof Frown }[] = [
+  { value: 'rough', Icon: Frown },
+  { value: 'okay', Icon: Meh },
+  { value: 'good', Icon: Smile },
 ]
 
 function EditDoseSheet({
@@ -893,12 +889,12 @@ function EditDoseSheet({
                   background: 'none',
                   border: 'none',
                   color: 'var(--text-secondary)',
-                  fontSize: 22,
                   cursor: 'pointer',
                   padding: 0,
+                  display: 'flex',
                 }}
               >
-                ×
+                <X size={22} strokeWidth={2} />
               </button>
             </div>
 
@@ -1008,7 +1004,7 @@ function EditDoseSheet({
                 Mood
               </p>
               <div style={{ display: 'flex', gap: 8 }}>
-                {EDIT_MOODS.map(({ value, emoji }) => (
+                {EDIT_MOODS.map(({ value, Icon }) => (
                   <button
                     key={value}
                     onClick={() => setMood(mood === value ? null : value)}
@@ -1016,13 +1012,19 @@ function EditDoseSheet({
                       flex: 1,
                       height: 44,
                       borderRadius: 12,
-                      fontSize: 20,
                       cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
                       backgroundColor: mood === value ? 'rgba(232,168,124,0.15)' : 'var(--bg)',
                       border: `1px solid ${mood === value ? 'var(--primary)' : 'var(--border)'}`,
                     }}
                   >
-                    {emoji}
+                    <Icon
+                      size={20}
+                      color={mood === value ? 'var(--primary)' : 'var(--text-secondary)'}
+                      strokeWidth={1.75}
+                    />
                   </button>
                 ))}
               </div>

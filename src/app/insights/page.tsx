@@ -1,11 +1,30 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useAppStore } from '@/lib/store'
 import { getPastDates, dateToKey, getDailyTargetForDate, formatGrams } from '@/lib/utils'
 import { IntakeEntry } from '@/lib/store'
-import { Shield, Sunrise, Sun, Sunset, Moon, Smile, Meh, Frown, LucideIcon } from 'lucide-react'
+import {
+  Shield,
+  Sunrise,
+  Sun,
+  Sunset,
+  Moon,
+  Smile,
+  Meh,
+  Frown,
+  TrendingDown,
+  TrendingUp,
+  ArrowRight,
+  Clock,
+  Heart,
+  BrainCircuit,
+  Activity,
+  Stethoscope,
+  BarChart2,
+  LucideIcon,
+} from 'lucide-react'
 
 interface DaySnapshot {
   date: Date
@@ -103,7 +122,7 @@ function StatCard({
 }: {
   label: string
   value: string
-  sub?: string
+  sub?: React.ReactNode
   accent?: string
   delay?: number
 }) {
@@ -452,25 +471,25 @@ export default function InsightsPage() {
 
   // Build 3 plain-language insight cards
   const insightCards = (() => {
-    const cards: { icon: string; headline: string; body: string }[] = []
+    const cards: { Icon: LucideIcon; headline: string; body: string }[] = []
 
     // Trend insight
     if (weekDelta !== null && weekDeltaPct !== null) {
       if (weekDelta < -0.2) {
         cards.push({
-          icon: '↓',
+          Icon: TrendingDown,
           headline: `Down ${weekDeltaPct}% this week`,
           body: `Your average this week is ${formatGrams(Math.round(data.thisWeekAvg * 10) / 10)} vs ${formatGrams(Math.round(data.lastWeekAvg * 10) / 10)} last week. The taper is working.`,
         })
       } else if (weekDelta > 0.2) {
         cards.push({
-          icon: '↑',
+          Icon: TrendingUp,
           headline: `Up ${weekDeltaPct}% this week`,
           body: `This week's average is a bit higher than last week. Consider whether a hold week would help.`,
         })
       } else {
         cards.push({
-          icon: '→',
+          Icon: ArrowRight,
           headline: 'Holding steady',
           body: 'This week looks similar to last week — consistency is progress too.',
         })
@@ -497,8 +516,8 @@ export default function InsightsPage() {
         }
         if (cards.length < 3) {
           cards.push({
-            icon: '🕐',
-            headline: `You dose most in the ${peak[0]}s`,
+            Icon: Clock,
+            headline: `You dose most in the ${labels[peak[0]]}`,
             body: tips[peak[0]],
           })
         }
@@ -511,13 +530,13 @@ export default function InsightsPage() {
         if (data.moodCounts.good > data.moodCounts.rough) {
           const goodPct = Math.round((data.moodCounts.good / data.totalMoodEntries) * 100)
           cards.push({
-            icon: '😊',
+            Icon: Smile,
             headline: `${goodPct}% of doses logged feeling good`,
             body: 'More good moments than rough ones — real progress that deserves recognition.',
           })
         } else if (data.moodCounts.rough > data.moodCounts.good) {
           cards.push({
-            icon: '💙',
+            Icon: Heart,
             headline: 'More rough days than good lately',
             body: 'This is normal during a taper. The symptoms are temporary — your body is adjusting.',
           })
@@ -528,7 +547,7 @@ export default function InsightsPage() {
     // Resistance insight
     if (data.totalResistances14 > 0 && cards.length < 3) {
       cards.push({
-        icon: '🛡',
+        Icon: Shield,
         headline: `${data.totalResistances14} craving${data.totalResistances14 !== 1 ? 's' : ''} resisted`,
         body: 'Every craving you ride out weakens the pattern. That willpower compounds.',
       })
@@ -592,10 +611,9 @@ export default function InsightsPage() {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontSize: 16,
                   }}
                 >
-                  {card.icon}
+                  <card.Icon size={18} color="var(--primary)" strokeWidth={1.75} />
                 </div>
                 <div>
                   <p
@@ -631,15 +649,21 @@ export default function InsightsPage() {
             label="This week avg"
             value={data.thisWeekAvg > 0 ? formatGrams(Math.round(data.thisWeekAvg * 10) / 10) : '—'}
             sub={
-              weekDelta !== null && weekDeltaPct !== null
-                ? weekDelta < 0
-                  ? `↓ ${weekDeltaPct}% vs last week`
-                  : weekDelta > 0
-                    ? `↑ ${weekDeltaPct}% vs last week`
-                    : 'Same as last week'
-                : data.lastWeekAvg === 0
-                  ? 'No prior week data'
-                  : undefined
+              weekDelta !== null && weekDeltaPct !== null ? (
+                weekDelta < 0 ? (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                    <TrendingDown size={12} strokeWidth={2} /> {weekDeltaPct}% vs last week
+                  </span>
+                ) : weekDelta > 0 ? (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                    <TrendingUp size={12} strokeWidth={2} /> {weekDeltaPct}% vs last week
+                  </span>
+                ) : (
+                  'Same as last week'
+                )
+              ) : data.lastWeekAvg === 0 ? (
+                'No prior week data'
+              ) : undefined
             }
             accent={weekDelta !== null && weekDelta < 0 ? 'var(--success)' : 'var(--primary)'}
             delay={0.05}
@@ -890,11 +914,11 @@ export default function InsightsPage() {
 
         {/* Symptom tracker summary */}
         {(() => {
-          const SYMPTOM_KEYS: Array<{ key: keyof SymptomData; emoji: string; label: string }> = [
-            { key: 'sleep', emoji: '😴', label: 'Sleep' },
-            { key: 'anxiety', emoji: '😰', label: 'Anxiety' },
-            { key: 'restlessness', emoji: '🦵', label: 'Restlessness' },
-            { key: 'gi', emoji: '🤢', label: 'Gut/GI' },
+          const SYMPTOM_KEYS: Array<{ key: keyof SymptomData; Icon: LucideIcon; label: string }> = [
+            { key: 'sleep', Icon: Moon, label: 'Sleep' },
+            { key: 'anxiety', Icon: BrainCircuit, label: 'Anxiety' },
+            { key: 'restlessness', Icon: Activity, label: 'Restlessness' },
+            { key: 'gi', Icon: Stethoscope, label: 'Gut/GI' },
           ]
           const daysWithAnySymptom = data.symptomData14.filter(
             (d) => Object.keys(d.symptoms).length > 0
@@ -926,7 +950,7 @@ export default function InsightsPage() {
                 Physical symptoms — 14 days
               </h2>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {SYMPTOM_KEYS.map(({ key, emoji, label }) => {
+                {SYMPTOM_KEYS.map(({ key, Icon: SymptomIcon, label }) => {
                   const mildDays = data.symptomData14.filter(
                     (d) => d.symptoms[key] === 'mild'
                   ).length
@@ -935,7 +959,12 @@ export default function InsightsPage() {
                   if (trackedDays === 0) return null
                   return (
                     <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <span style={{ fontSize: 18, flexShrink: 0 }}>{emoji}</span>
+                      <SymptomIcon
+                        size={18}
+                        color="var(--text-secondary)"
+                        strokeWidth={1.75}
+                        style={{ flexShrink: 0 }}
+                      />
                       <div style={{ flex: 1 }}>
                         <div
                           style={{
@@ -1045,7 +1074,9 @@ export default function InsightsPage() {
               textAlign: 'center',
             }}
           >
-            <p style={{ fontSize: 32, marginBottom: 12 }}>📊</p>
+            <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'center' }}>
+              <BarChart2 size={40} color="var(--text-secondary)" strokeWidth={1.5} />
+            </div>
             <p
               style={{
                 fontWeight: 600,

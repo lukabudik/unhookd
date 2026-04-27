@@ -14,7 +14,20 @@ import {
   getPresets,
 } from '@/lib/utils'
 import { format } from 'date-fns'
-import { Flame, Frown, Meh, Smile, SmilePlus, LucideIcon } from 'lucide-react'
+import {
+  Flame,
+  Frown,
+  Meh,
+  Smile,
+  SmilePlus,
+  Pencil,
+  X,
+  CheckCircle2,
+  Circle,
+  TrendingUp,
+  ChevronRight,
+  LucideIcon,
+} from 'lucide-react'
 
 interface CheckInData {
   mood: 'awful' | 'rough' | 'okay' | 'good' | 'great'
@@ -276,7 +289,7 @@ export default function HistoryPage() {
                   gap: 3,
                 }}
               >
-                <span style={{ fontSize: 9 }}>●</span> On target
+                <CheckCircle2 size={10} strokeWidth={2} /> On target
               </span>
               <span
                 style={{
@@ -287,7 +300,7 @@ export default function HistoryPage() {
                   gap: 3,
                 }}
               >
-                <span style={{ fontSize: 9 }}>▲</span> Over
+                <TrendingUp size={10} strokeWidth={2} /> Over
               </span>
               <span
                 style={{
@@ -298,7 +311,7 @@ export default function HistoryPage() {
                   gap: 3,
                 }}
               >
-                <span style={{ fontSize: 9 }}>○</span> None
+                <Circle size={10} strokeWidth={2} /> None
               </span>
             </div>
           </div>
@@ -332,9 +345,7 @@ export default function HistoryPage() {
                   if (isZero) statusColor = 'var(--text-secondary)'
                   else if (isOver) statusColor = 'var(--danger)'
 
-                  let statusDot = '●'
-                  if (isZero) statusDot = '○'
-                  else if (isOver) statusDot = '▲'
+                  const StatusIcon = isZero ? Circle : isOver ? TrendingUp : CheckCircle2
 
                   return (
                     <motion.div
@@ -401,14 +412,15 @@ export default function HistoryPage() {
                             gap: 6,
                           }}
                         >
-                          <span style={{ fontSize: 10 }}>{statusDot}</span>
+                          <StatusIcon size={12} strokeWidth={2} />
                           {isZero ? '—' : formatGrams(day.total)}
                         </div>
-                        <span
-                          style={{ fontSize: 12, color: 'var(--text-secondary)', opacity: 0.5 }}
-                        >
-                          ›
-                        </span>
+                        <ChevronRight
+                          size={14}
+                          color="var(--text-secondary)"
+                          strokeWidth={2}
+                          style={{ opacity: 0.4 }}
+                        />
                       </div>
                     </motion.div>
                   )
@@ -527,12 +539,12 @@ export default function HistoryPage() {
                     background: 'none',
                     border: 'none',
                     color: 'var(--text-secondary)',
-                    fontSize: 22,
                     cursor: 'pointer',
                     padding: 0,
+                    display: 'flex',
                   }}
                 >
-                  ×
+                  <X size={22} strokeWidth={2} />
                 </button>
               </div>
 
@@ -633,9 +645,15 @@ export default function HistoryPage() {
                               >
                                 {formatGrams(intake.amount)}
                               </span>
-                              {intake.mood === 'rough' && <span>😣</span>}
-                              {intake.mood === 'okay' && <span>😐</span>}
-                              {intake.mood === 'good' && <span>🙂</span>}
+                              {intake.mood === 'rough' && (
+                                <Frown size={14} color="var(--text-secondary)" strokeWidth={1.75} />
+                              )}
+                              {intake.mood === 'okay' && (
+                                <Meh size={14} color="var(--text-secondary)" strokeWidth={1.75} />
+                              )}
+                              {intake.mood === 'good' && (
+                                <Smile size={14} color="var(--success)" strokeWidth={1.75} />
+                              )}
                             </div>
                             {intake.note && (
                               <p
@@ -673,12 +691,11 @@ export default function HistoryPage() {
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                fontSize: 12,
                                 padding: 0,
                                 flexShrink: 0,
                               }}
                             >
-                              ✎
+                              <Pencil size={13} strokeWidth={2} />
                             </button>
                             <button
                               onClick={() => deleteHistoricalIntake(selectedDay.key, intake.id)}
@@ -693,12 +710,11 @@ export default function HistoryPage() {
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                fontSize: 14,
                                 padding: 0,
                                 flexShrink: 0,
                               }}
                             >
-                              ×
+                              <X size={14} strokeWidth={2} />
                             </button>
                           </div>
                         </div>
@@ -842,7 +858,25 @@ function HistoryEntryEditor({
               border: `1px solid ${mood === m ? 'var(--primary)' : 'var(--border)'}`,
             }}
           >
-            {m === 'rough' ? '😣' : m === 'okay' ? '😐' : '🙂'}
+            {m === 'rough' ? (
+              <Frown
+                size={18}
+                color={mood === m ? 'var(--primary)' : 'var(--text-secondary)'}
+                strokeWidth={1.75}
+              />
+            ) : m === 'okay' ? (
+              <Meh
+                size={18}
+                color={mood === m ? 'var(--primary)' : 'var(--text-secondary)'}
+                strokeWidth={1.75}
+              />
+            ) : (
+              <Smile
+                size={18}
+                color={mood === m ? 'var(--primary)' : 'var(--text-secondary)'}
+                strokeWidth={1.75}
+              />
+            )}
           </button>
         ))}
       </div>

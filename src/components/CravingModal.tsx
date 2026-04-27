@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
-import { X } from 'lucide-react'
+import { X, Phone, Check } from 'lucide-react'
 
 interface Props {
   isOpen: boolean
@@ -258,7 +258,9 @@ export function CravingModal({
                   letterSpacing: '0.01em',
                 }}
               >
-                I rode it out ✓
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                  <Check size={18} strokeWidth={2.5} />I rode it out
+                </span>
               </button>
               {emergencyContact?.phone && (
                 <a
@@ -280,7 +282,8 @@ export function CravingModal({
                     textDecoration: 'none',
                   }}
                 >
-                  📞 Call {emergencyContact.name}
+                  <Phone size={16} strokeWidth={1.75} />
+                  Call {emergencyContact.name}
                 </a>
               )}
               <button

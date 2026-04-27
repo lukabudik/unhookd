@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { IntakeEntry } from '@/lib/store'
 import { getPresets } from '@/lib/utils'
-import { Frown, Meh, Smile, LucideIcon } from 'lucide-react'
+import { Frown, Meh, Smile, ChevronDown, ChevronRight, Check, LucideIcon } from 'lucide-react'
 
 type Mood = 'rough' | 'okay' | 'good'
 
@@ -103,15 +103,16 @@ export function DoseLogger({ onLog, onSuccess, dailyTarget = 6 }: DoseLoggerProp
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: 36,
             }}
           >
-            ✓
+            <Check size={36} color="var(--success)" strokeWidth={2.5} />
           </div>
           <p style={{ color: 'var(--success)', fontWeight: 600, fontSize: 18, margin: 0 }}>
             Dose logged
           </p>
-          <p style={{ color: 'var(--text-secondary)', fontSize: 14, margin: 0, textAlign: 'center' }}>
+          <p
+            style={{ color: 'var(--text-secondary)', fontSize: 14, margin: 0, textAlign: 'center' }}
+          >
             Honesty is the first step. You&apos;re doing great.
           </p>
         </motion.div>
@@ -144,7 +145,10 @@ export function DoseLogger({ onLog, onSuccess, dailyTarget = 6 }: DoseLoggerProp
                 return (
                   <button
                     key={preset}
-                    onClick={() => { setAmount(preset); setUseCustom(false) }}
+                    onClick={() => {
+                      setAmount(preset)
+                      setUseCustom(false)
+                    }}
                     style={{
                       height: 52,
                       borderRadius: 12,
@@ -165,7 +169,10 @@ export function DoseLogger({ onLog, onSuccess, dailyTarget = 6 }: DoseLoggerProp
 
             <div style={{ marginTop: 8 }}>
               <button
-                onClick={() => { setUseCustom(true); setAmount(null) }}
+                onClick={() => {
+                  setUseCustom(true)
+                  setAmount(null)
+                }}
                 style={{
                   width: '100%',
                   height: 52,
@@ -237,7 +244,9 @@ export function DoseLogger({ onLog, onSuccess, dailyTarget = 6 }: DoseLoggerProp
                     style={{
                       height: 60,
                       borderRadius: 12,
-                      backgroundColor: isSelected ? 'rgba(232,168,124,0.15)' : 'var(--surface-elevated)',
+                      backgroundColor: isSelected
+                        ? 'rgba(232,168,124,0.15)'
+                        : 'var(--surface-elevated)',
                       border: `1px solid ${isSelected ? 'var(--primary)' : 'var(--border)'}`,
                       display: 'flex',
                       flexDirection: 'column',
@@ -248,7 +257,11 @@ export function DoseLogger({ onLog, onSuccess, dailyTarget = 6 }: DoseLoggerProp
                       cursor: 'pointer',
                     }}
                   >
-                    <Icon size={22} color={isSelected ? 'var(--primary)' : 'var(--text-secondary)'} strokeWidth={1.75} />
+                    <Icon
+                      size={22}
+                      color={isSelected ? 'var(--primary)' : 'var(--text-secondary)'}
+                      strokeWidth={1.75}
+                    />
                     <span
                       style={{
                         fontSize: 11,
@@ -313,7 +326,14 @@ export function DoseLogger({ onLog, onSuccess, dailyTarget = 6 }: DoseLoggerProp
                 fontWeight: isBackdating ? 600 : 400,
               }}
             >
-              {isBackdating ? '▾' : '▸'} Log for a different time
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                {isBackdating ? (
+                  <ChevronDown size={13} strokeWidth={2} />
+                ) : (
+                  <ChevronRight size={13} strokeWidth={2} />
+                )}
+                Log for a different time
+              </span>
             </button>
             {isBackdating && (
               <motion.div

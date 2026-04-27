@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Smartphone } from 'lucide-react'
+import { Smartphone, X } from 'lucide-react'
 
 const DISMISSED_KEY = 'unhookd_install_dismissed'
 const DISMISS_DAYS = 14
@@ -10,7 +10,9 @@ const DISMISS_DAYS = 14
 export function InstallBanner() {
   const [show, setShow] = useState(false)
   const [isIOS, setIsIOS] = useState(false)
-  const [deferredPrompt, setDeferredPrompt] = useState<Event & { prompt: () => void; userChoice: Promise<{ outcome: string }> } | null>(null)
+  const [deferredPrompt, setDeferredPrompt] = useState<
+    (Event & { prompt: () => void; userChoice: Promise<{ outcome: string }> }) | null
+  >(null)
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -41,7 +43,9 @@ export function InstallBanner() {
     // Android / desktop Chrome — listen for native install event
     const handler = (e: Event) => {
       e.preventDefault()
-      setDeferredPrompt(e as Event & { prompt: () => void; userChoice: Promise<{ outcome: string }> })
+      setDeferredPrompt(
+        e as Event & { prompt: () => void; userChoice: Promise<{ outcome: string }> }
+      )
       setShow(true)
     }
     window.addEventListener('beforeinstallprompt', handler)
@@ -104,22 +108,50 @@ export function InstallBanner() {
             </div>
 
             <div style={{ flex: 1, minWidth: 0 }}>
-              <p style={{ margin: '0 0 2px 0', fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>
+              <p
+                style={{
+                  margin: '0 0 2px 0',
+                  fontSize: 14,
+                  fontWeight: 700,
+                  color: 'var(--text-primary)',
+                }}
+              >
                 Add Unhookd to your home screen
               </p>
 
               {isIOS ? (
-                <p style={{ margin: '0 0 12px 0', fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                <p
+                  style={{
+                    margin: '0 0 12px 0',
+                    fontSize: 12,
+                    color: 'var(--text-secondary)',
+                    lineHeight: 1.5,
+                  }}
+                >
                   Tap{' '}
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, verticalAlign: 'middle' }}>
+                  <span
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 3,
+                      verticalAlign: 'middle',
+                    }}
+                  >
                     <ShareIcon />
-                  </span>
-                  {' '}at the bottom of Safari, then{' '}
-                  <strong style={{ color: 'var(--text-primary)' }}>"Add to Home Screen"</strong>
-                  {' '}for the full app experience.
+                  </span>{' '}
+                  at the bottom of Safari, then{' '}
+                  <strong style={{ color: 'var(--text-primary)' }}>"Add to Home Screen"</strong> for
+                  the full app experience.
                 </p>
               ) : (
-                <p style={{ margin: '0 0 12px 0', fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                <p
+                  style={{
+                    margin: '0 0 12px 0',
+                    fontSize: 12,
+                    color: 'var(--text-secondary)',
+                    lineHeight: 1.5,
+                  }}
+                >
                   Install for the full app experience — works offline, feels native.
                 </p>
               )}
@@ -164,9 +196,19 @@ export function InstallBanner() {
 
             <button
               onClick={dismiss}
-              style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: 18, padding: 0, flexShrink: 0, lineHeight: 1, opacity: 0.6 }}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'var(--text-secondary)',
+                cursor: 'pointer',
+                padding: 0,
+                flexShrink: 0,
+                lineHeight: 1,
+                opacity: 0.6,
+                display: 'flex',
+              }}
             >
-              ×
+              <X size={18} strokeWidth={2} />
             </button>
           </div>
         </motion.div>
@@ -177,10 +219,28 @@ export function InstallBanner() {
 
 function ShareIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ display: 'inline', verticalAlign: 'middle' }}>
-      <path d="M12 2L12 15" stroke="var(--primary)" strokeWidth="2" strokeLinecap="round"/>
-      <path d="M8 6L12 2L16 6" stroke="var(--primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-      <path d="M4 12V20C4 20.5523 4.44772 21 5 21H19C19.5523 21 20 20.5523 20 20V12" stroke="var(--primary)" strokeWidth="2" strokeLinecap="round"/>
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      style={{ display: 'inline', verticalAlign: 'middle' }}
+    >
+      <path d="M12 2L12 15" stroke="var(--primary)" strokeWidth="2" strokeLinecap="round" />
+      <path
+        d="M8 6L12 2L16 6"
+        stroke="var(--primary)"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M4 12V20C4 20.5523 4.44772 21 5 21H19C19.5523 21 20 20.5523 20 20V12"
+        stroke="var(--primary)"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
     </svg>
   )
 }

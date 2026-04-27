@@ -12,6 +12,8 @@ import {
   Frown,
   Meh,
   Smile,
+  ChevronDown,
+  ChevronRight,
   LucideIcon,
 } from 'lucide-react'
 import { getTodayKey } from '@/lib/utils'
@@ -387,7 +389,14 @@ export function DailyCheckIn() {
                 display: 'block',
               }}
             >
-              {showSymptoms ? '▾' : '▸'} Track physical symptoms (optional)
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                {showSymptoms ? (
+                  <ChevronDown size={13} strokeWidth={2} />
+                ) : (
+                  <ChevronRight size={13} strokeWidth={2} />
+                )}
+                Track physical symptoms (optional)
+              </span>
             </button>
 
             <AnimatePresence>

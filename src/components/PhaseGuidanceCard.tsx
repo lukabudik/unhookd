@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import * as LucideIcons from 'lucide-react'
+import { X } from 'lucide-react'
 import { PhaseInfo } from '@/lib/phases'
 import { getTodayKey } from '@/lib/utils'
 
@@ -25,12 +26,17 @@ export function PhaseGuidanceCard({ phaseInfo }: { phaseInfo: PhaseInfo }) {
         const { date, phase } = JSON.parse(raw)
         if (date === getTodayKey() && phase === phaseInfo.phase) return
       }
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
     setVisible(true)
   }, [phaseInfo.phase])
 
   function dismiss() {
-    localStorage.setItem(DISMISS_KEY, JSON.stringify({ date: getTodayKey(), phase: phaseInfo.phase }))
+    localStorage.setItem(
+      DISMISS_KEY,
+      JSON.stringify({ date: getTodayKey(), phase: phaseInfo.phase })
+    )
     setVisible(false)
   }
 
@@ -59,19 +65,43 @@ export function PhaseGuidanceCard({ phaseInfo }: { phaseInfo: PhaseInfo }) {
               <PhaseIcon name={phaseInfo.icon} color={phaseInfo.color} />
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <p style={{ margin: '0 0 3px 0', fontSize: 13, fontWeight: 700, color: phaseInfo.color }}>
+              <p
+                style={{
+                  margin: '0 0 3px 0',
+                  fontSize: 13,
+                  fontWeight: 700,
+                  color: phaseInfo.color,
+                }}
+              >
                 {phaseInfo.title}
               </p>
-              <p style={{ margin: 0, fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.65 }}>
+              <p
+                style={{
+                  margin: 0,
+                  fontSize: 12,
+                  color: 'var(--text-secondary)',
+                  lineHeight: 1.65,
+                }}
+              >
                 {phaseInfo.body}
               </p>
             </div>
             <button
               onClick={dismiss}
               aria-label="Dismiss"
-              style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: 18, padding: 0, flexShrink: 0, lineHeight: 1, opacity: 0.6 }}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'var(--text-secondary)',
+                cursor: 'pointer',
+                padding: 0,
+                flexShrink: 0,
+                lineHeight: 1,
+                opacity: 0.6,
+                display: 'flex',
+              }}
             >
-              ×
+              <X size={18} strokeWidth={2} />
             </button>
           </div>
         </motion.div>

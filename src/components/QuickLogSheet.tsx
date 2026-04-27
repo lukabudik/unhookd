@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { IntakeEntry } from '@/lib/store'
 import { getPresets } from '@/lib/utils'
-import { Frown, Meh, Smile, ChevronDown, ChevronUp, LucideIcon } from 'lucide-react'
+import { Frown, Meh, Smile, ChevronDown, ChevronUp, Check, LucideIcon } from 'lucide-react'
 
 type Mood = 'rough' | 'okay' | 'good'
 
@@ -184,10 +184,9 @@ export function QuickLogSheet({
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      fontSize: 28,
                     }}
                   >
-                    ✓
+                    <Check size={28} color="var(--success)" strokeWidth={2.5} />
                   </div>
                   <p style={{ color: 'var(--success)', fontWeight: 700, fontSize: 17, margin: 0 }}>
                     {finalAmount}g logged

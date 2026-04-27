@@ -8,7 +8,7 @@ import { useFirestore } from '@/hooks/useFirestore'
 import { useNotifications } from '@/hooks/useNotifications'
 import { formatGrams, getDailyTargetForDate, getTodayKey, dateToKey } from '@/lib/utils'
 import { TaperTrajectoryChart } from '@/components/TaperTrajectoryChart'
-import { Pencil } from 'lucide-react'
+import { Pencil, Check, ChevronUp, ChevronDown } from 'lucide-react'
 
 export default function PlanPage() {
   const router = useRouter()
@@ -162,10 +162,9 @@ export default function PlanPage() {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: 36,
             }}
           >
-            ✓
+            <Check size={36} color="var(--primary)" strokeWidth={2.5} />
           </div>
           <h2 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
             Plan saved!
@@ -1095,8 +1094,14 @@ function DoseCalculator({ onApply }: { onApply: (dailyLimit: number) => void }) 
             Know your grams remaining? Work backwards.
           </p>
         </div>
-        <span style={{ fontSize: 18, color: 'var(--text-secondary)', opacity: 0.6, flexShrink: 0 }}>
-          {open ? '▲' : '▼'}
+        <span
+          style={{ color: 'var(--text-secondary)', opacity: 0.6, flexShrink: 0, display: 'flex' }}
+        >
+          {open ? (
+            <ChevronUp size={18} strokeWidth={2} />
+          ) : (
+            <ChevronDown size={18} strokeWidth={2} />
+          )}
         </span>
       </button>
 
