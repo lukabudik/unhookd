@@ -214,6 +214,9 @@ export function BottomNav() {
                 gap: 3,
                 padding: '8px 4px 10px',
                 textDecoration: 'none',
+                cursor: 'pointer',
+                touchAction: 'manipulation',
+                WebkitTapHighlightColor: 'transparent',
               }}
             >
               <div
@@ -226,6 +229,7 @@ export function BottomNav() {
                   justifyContent: 'center',
                   backgroundColor: isActive ? 'rgba(232,168,124,0.15)' : 'transparent',
                   transition: 'background-color 0.18s ease',
+                  pointerEvents: 'none',
                 }}
               >
                 <Icon active={isActive} />
