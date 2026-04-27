@@ -26,36 +26,41 @@ function hasLoggedToday(): boolean {
   }
 }
 
-function getTodayTotal(): number {
-  if (typeof window === 'undefined') return 0
-  const raw = localStorage.getItem(`unhookd_intakes_${getTodayKey()}`)
-  if (!raw) return 0
-  try {
-    const entries = JSON.parse(raw) as Array<{ amount: number }>
-    return entries.reduce((s, e) => s + e.amount, 0)
-  } catch {
-    return 0
-  }
-}
-
 function getCurrentStreak(): number {
   if (typeof window === 'undefined') return 0
   try {
     const planRaw = localStorage.getItem('unhookd_plan')
     if (!planRaw) return 0
-    const plan = JSON.parse(planRaw) as { startAmount: number; targetAmount: number; startDate: string; weeksToTarget: number; currentDailyTarget: number }
-    const today = new Date(); today.setHours(0, 0, 0, 0)
+    const plan = JSON.parse(planRaw) as {
+      startAmount: number
+      targetAmount: number
+      startDate: string
+      weeksToTarget: number
+      currentDailyTarget: number
+    }
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
     let count = 0
     for (let i = 1; i <= 60; i++) {
-      const d = new Date(today); d.setDate(d.getDate() - i)
+      const d = new Date(today)
+      d.setDate(d.getDate() - i)
       const key = d.toISOString().split('T')[0]
       const raw = localStorage.getItem(`unhookd_intakes_${key}`)
       if (!raw) break
       const entries = JSON.parse(raw) as Array<{ amount: number }>
       const total = entries.reduce((s: number, e: { amount: number }) => s + e.amount, 0)
       const targetDays = plan.weeksToTarget * 7
-      const daysDiff = Math.floor((today.getTime() - new Date(plan.startDate).getTime()) / 86400000) - i
-      const dailyTarget = daysDiff < 0 ? plan.startAmount : daysDiff >= targetDays ? plan.targetAmount : Math.max(plan.targetAmount, plan.startAmount - ((plan.startAmount - plan.targetAmount) / targetDays) * daysDiff)
+      const daysDiff =
+        Math.floor((today.getTime() - new Date(plan.startDate).getTime()) / 86400000) - i
+      const dailyTarget =
+        daysDiff < 0
+          ? plan.startAmount
+          : daysDiff >= targetDays
+            ? plan.targetAmount
+            : Math.max(
+                plan.targetAmount,
+                plan.startAmount - ((plan.startAmount - plan.targetAmount) / targetDays) * daysDiff
+              )
       if (total > 0 && total <= dailyTarget) count++
       else break
     }
@@ -69,11 +74,22 @@ function getWeekStats(): { daysLogged: number; daysOnTarget: number; streak: num
   if (typeof window === 'undefined') return { daysLogged: 0, daysOnTarget: 0, streak: 0 }
   try {
     const planRaw = localStorage.getItem('unhookd_plan')
-    const plan = planRaw ? JSON.parse(planRaw) as { startAmount: number; targetAmount: number; weeksToTarget: number; startDate: string; currentDailyTarget: number } : null
-    const today = new Date(); today.setHours(0, 0, 0, 0)
-    let daysLogged = 0; let daysOnTarget = 0
+    const plan = planRaw
+      ? (JSON.parse(planRaw) as {
+          startAmount: number
+          targetAmount: number
+          weeksToTarget: number
+          startDate: string
+          currentDailyTarget: number
+        })
+      : null
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    let daysLogged = 0
+    let daysOnTarget = 0
     for (let i = 1; i <= 7; i++) {
-      const d = new Date(today); d.setDate(d.getDate() - i)
+      const d = new Date(today)
+      d.setDate(d.getDate() - i)
       const key = d.toISOString().split('T')[0]
       const raw = localStorage.getItem(`unhookd_intakes_${key}`)
       if (!raw) continue
@@ -83,8 +99,18 @@ function getWeekStats(): { daysLogged: number; daysOnTarget: number; streak: num
         daysLogged++
         if (plan) {
           const totalDays = plan.weeksToTarget * 7
-          const daysDiff = Math.floor((today.getTime() - new Date(plan.startDate).getTime()) / 86400000) - i
-          const target = daysDiff < 0 ? plan.startAmount : daysDiff >= totalDays ? plan.targetAmount : Math.max(plan.targetAmount, plan.startAmount - ((plan.startAmount - plan.targetAmount) / totalDays) * daysDiff)
+          const daysDiff =
+            Math.floor((today.getTime() - new Date(plan.startDate).getTime()) / 86400000) - i
+          const target =
+            daysDiff < 0
+              ? plan.startAmount
+              : daysDiff >= totalDays
+                ? plan.targetAmount
+                : Math.max(
+                    plan.targetAmount,
+                    plan.startAmount -
+                      ((plan.startAmount - plan.targetAmount) / totalDays) * daysDiff
+                  )
           if (total <= target) daysOnTarget++
         }
       }
@@ -100,7 +126,6 @@ function getWeekStats(): { daysLogged: number; daysOnTarget: number; streak: num
 function buildReminderMessage(): { title: string; body: string } {
   const logged = hasLoggedToday()
   const streak = getCurrentStreak()
-  const total = getTodayTotal()
 
   if (logged) {
     if (streak >= 3) {
@@ -151,7 +176,8 @@ function buildWeeklySummaryMessage(): { title: string; body: string } {
       body: 'Open Unhookd and log your doses this week — the data helps you see patterns.',
     }
   }
-  const onTargetStr = daysOnTarget > 0 ? `On target ${daysOnTarget} of ${daysLogged} logged days.` : ''
+  const onTargetStr =
+    daysOnTarget > 0 ? `On target ${daysOnTarget} of ${daysLogged} logged days.` : ''
   const streakStr = streak > 0 ? ` ${streak}-day streak 🔥` : ''
   return {
     title: `Week in review — ${daysLogged}/7 days logged`,
@@ -167,62 +193,27 @@ export function useNotifications() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return
-    if (!('Notification' in window)) { setPermission('unsupported'); return }
+    /* eslint-disable react-hooks/set-state-in-effect */
+    if (!('Notification' in window)) {
+      setPermission('unsupported')
+      return
+    }
     setPermission(Notification.permission as NotifPermission)
     const stored = localStorage.getItem(REMINDER_KEY)
     if (stored) setReminderTimeState(stored)
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, [])
 
-  // Daily reminder scheduler
-  useEffect(() => {
-    if (permission !== 'granted' || !reminderTime) return
-    const [hours, minutes] = reminderTime.split(':').map(Number)
-
-    function scheduleNext() {
-      const now = new Date()
-      const next = new Date()
-      next.setHours(hours, minutes, 0, 0)
-      if (next <= now) next.setDate(next.getDate() + 1)
-      return setTimeout(() => { fireReminder(); scheduleNext() }, next.getTime() - now.getTime())
-    }
-
-    const timerId = scheduleNext()
-    return () => clearTimeout(timerId)
-  }, [permission, reminderTime]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Weekly summary — Sunday at 20:00
-  useEffect(() => {
-    if (permission !== 'granted') return
-
-    function scheduleWeekly() {
-      const now = new Date()
-      const next = new Date()
-      // Next Sunday at 20:00
-      const daysUntilSunday = (7 - now.getDay()) % 7 || 7
-      next.setDate(now.getDate() + daysUntilSunday)
-      next.setHours(20, 0, 0, 0)
-      if (next <= now) next.setDate(next.getDate() + 7)
-
-      return setTimeout(() => {
-        // Only send once per week
-        const lastSent = localStorage.getItem(WEEKLY_SENT_KEY)
-        const weekKey = `${next.getFullYear()}-W${Math.ceil(next.getDate() / 7)}`
-        if (lastSent !== weekKey) {
-          fireWeeklySummary()
-          localStorage.setItem(WEEKLY_SENT_KEY, weekKey)
-        }
-        scheduleWeekly()
-      }, next.getTime() - now.getTime())
-    }
-
-    const timerId = scheduleWeekly()
-    return () => clearTimeout(timerId)
-  }, [permission]) // eslint-disable-line react-hooks/exhaustive-deps
-
+  // Declare callbacks first so the schedulers below can reference them
   const sendNotification = useCallback((title: string, body: string, tag = 'unhookd-reminder') => {
     if (typeof window === 'undefined') return
     if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-      navigator.serviceWorker.controller.postMessage({ type: 'SHOW_NOTIFICATION', title, body, url: '/' })
+      navigator.serviceWorker.controller.postMessage({
+        type: 'SHOW_NOTIFICATION',
+        title,
+        body,
+        url: '/',
+      })
     } else if (Notification.permission === 'granted') {
       new Notification(title, { body, icon: '/icon-192.png', tag })
     }
@@ -238,6 +229,53 @@ export function useNotifications() {
     sendNotification(title, body, 'unhookd-weekly')
   }, [sendNotification])
 
+  // Daily reminder scheduler
+  useEffect(() => {
+    if (permission !== 'granted' || !reminderTime) return
+    const [hours, minutes] = reminderTime.split(':').map(Number)
+
+    function scheduleNext() {
+      const now = new Date()
+      const next = new Date()
+      next.setHours(hours, minutes, 0, 0)
+      if (next <= now) next.setDate(next.getDate() + 1)
+      return setTimeout(() => {
+        fireReminder()
+        scheduleNext()
+      }, next.getTime() - now.getTime())
+    }
+
+    const timerId = scheduleNext()
+    return () => clearTimeout(timerId)
+  }, [permission, reminderTime, fireReminder])
+
+  // Weekly summary — Sunday at 20:00
+  useEffect(() => {
+    if (permission !== 'granted') return
+
+    function scheduleWeekly() {
+      const now = new Date()
+      const next = new Date()
+      const daysUntilSunday = (7 - now.getDay()) % 7 || 7
+      next.setDate(now.getDate() + daysUntilSunday)
+      next.setHours(20, 0, 0, 0)
+      if (next <= now) next.setDate(next.getDate() + 7)
+
+      return setTimeout(() => {
+        const lastSent = localStorage.getItem(WEEKLY_SENT_KEY)
+        const weekKey = `${next.getFullYear()}-W${Math.ceil(next.getDate() / 7)}`
+        if (lastSent !== weekKey) {
+          fireWeeklySummary()
+          localStorage.setItem(WEEKLY_SENT_KEY, weekKey)
+        }
+        scheduleWeekly()
+      }, next.getTime() - now.getTime())
+    }
+
+    const timerId = scheduleWeekly()
+    return () => clearTimeout(timerId)
+  }, [permission, fireWeeklySummary])
+
   const requestPermission = useCallback(async (): Promise<boolean> => {
     if (typeof window === 'undefined' || !('Notification' in window)) return false
     localStorage.setItem(PERMISSION_ASKED_KEY, 'true')
@@ -252,7 +290,8 @@ export function useNotifications() {
     setReminderTimeState(time)
   }, [])
 
-  const hasBeenAsked = typeof window !== 'undefined' ? !!localStorage.getItem(PERMISSION_ASKED_KEY) : false
+  const hasBeenAsked =
+    typeof window !== 'undefined' ? !!localStorage.getItem(PERMISSION_ASKED_KEY) : false
 
   return { permission, reminderTime, setReminderTime, requestPermission, hasBeenAsked }
 }
