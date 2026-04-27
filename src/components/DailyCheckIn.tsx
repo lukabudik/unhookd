@@ -2,7 +2,18 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Moon, BrainCircuit, Activity, Stethoscope, PersonStanding, Sofa, Frown, Meh, Smile, SmilePlus, LucideIcon } from 'lucide-react'
+import {
+  Moon,
+  BrainCircuit,
+  Activity,
+  Stethoscope,
+  PersonStanding,
+  Sofa,
+  Frown,
+  Meh,
+  Smile,
+  LucideIcon,
+} from 'lucide-react'
 import { getTodayKey } from '@/lib/utils'
 
 type CheckInMood = 'awful' | 'rough' | 'okay' | 'good' | 'great'
@@ -23,15 +34,24 @@ export interface CheckInData {
   moved?: boolean
 }
 
+// Simplified to 3 moods — maps awful→rough and great→good for display of legacy data
 const MOODS: { value: CheckInMood; Icon: LucideIcon; label: string; color: string }[] = [
-  { value: 'awful', Icon: Frown, label: 'Awful', color: '#e05c5c' },
   { value: 'rough', Icon: Frown, label: 'Rough', color: '#e8a87c' },
   { value: 'okay', Icon: Meh, label: 'Okay', color: '#b8a898' },
   { value: 'good', Icon: Smile, label: 'Good', color: '#7fb069' },
-  { value: 'great', Icon: SmilePlus, label: 'Great', color: '#5bc4a0' },
 ]
 
-type SymptomIconComponent = React.ComponentType<{ size?: number; color?: string; strokeWidth?: number }>
+function normalizeMood(mood: CheckInMood): CheckInMood {
+  if (mood === 'awful') return 'rough'
+  if (mood === 'great') return 'good'
+  return mood
+}
+
+type SymptomIconComponent = React.ComponentType<{
+  size?: number
+  color?: string
+  strokeWidth?: number
+}>
 const SYMPTOMS: { key: keyof SymptomData; Icon: SymptomIconComponent; label: string }[] = [
   { key: 'sleep', Icon: Moon, label: 'Sleep' },
   { key: 'anxiety', Icon: BrainCircuit, label: 'Anxiety' },
@@ -64,8 +84,8 @@ export function DailyCheckIn() {
     if (raw) {
       try {
         const parsed = JSON.parse(raw) as CheckInData
-      setSaved(parsed)
-      if (parsed.moved !== undefined) setMoved(parsed.moved)
+        setSaved(parsed)
+        if (parsed.moved !== undefined) setMoved(parsed.moved)
       } catch {
         // ignore
       }
@@ -91,7 +111,7 @@ export function DailyCheckIn() {
 
   function startEditing() {
     if (saved) {
-      setSelectedMood(saved.mood)
+      setSelectedMood(normalizeMood(saved.mood))
       setNote(saved.note)
       setSymptoms(saved.symptoms ?? {})
       setMoved(saved.moved ?? null)
@@ -101,10 +121,10 @@ export function DailyCheckIn() {
   }
 
   function setSymptom(key: keyof SymptomData, value: SymptomLevel) {
-    setSymptoms(prev => ({ ...prev, [key]: prev[key] === value ? undefined : value }))
+    setSymptoms((prev) => ({ ...prev, [key]: prev[key] === value ? undefined : value }))
   }
 
-  const moodConfig = saved ? MOODS.find((m) => m.value === saved.mood) : null
+  const moodConfig = saved ? MOODS.find((m) => m.value === normalizeMood(saved.mood)) : null
 
   if (saved && !isEditing) {
     return (
@@ -125,31 +145,74 @@ export function DailyCheckIn() {
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 }}>
           {moodConfig?.Icon && (
-            <moodConfig.Icon size={24} color={moodConfig.color} strokeWidth={1.75} style={{ flexShrink: 0 }} />
+            <moodConfig.Icon
+              size={24}
+              color={moodConfig.color}
+              strokeWidth={1.75}
+              style={{ flexShrink: 0 }}
+            />
           )}
           <div style={{ minWidth: 0 }}>
             <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: moodConfig?.color }}>
               Feeling {moodConfig?.label.toLowerCase()} today
             </p>
             {saved.note && (
-              <p style={{ margin: '2px 0 0 0', fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <p
+                style={{
+                  margin: '2px 0 0 0',
+                  fontSize: 12,
+                  color: 'var(--text-secondary)',
+                  lineHeight: 1.3,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
                 {saved.note}
               </p>
             )}
-            {(saved.symptoms && Object.keys(saved.symptoms).length > 0 || saved.moved !== undefined) && (
-              <p style={{ margin: '3px 0 0 0', fontSize: 11, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 4 }}>
-                {saved.moved === true && <><PersonStanding size={11} strokeWidth={2} /> moved · </>}
-                {saved.moved === false && <><Sofa size={11} strokeWidth={2} /> rested · </>}
-                {saved.symptoms && Object.keys(saved.symptoms).length > 0 &&
-                  (Object.values(saved.symptoms).every(v => v === 'fine') ? 'no symptoms' : 'symptoms tracked')
-                }
+            {((saved.symptoms && Object.keys(saved.symptoms).length > 0) ||
+              saved.moved !== undefined) && (
+              <p
+                style={{
+                  margin: '3px 0 0 0',
+                  fontSize: 11,
+                  color: 'var(--text-secondary)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4,
+                }}
+              >
+                {saved.moved === true && (
+                  <>
+                    <PersonStanding size={11} strokeWidth={2} /> moved ·{' '}
+                  </>
+                )}
+                {saved.moved === false && (
+                  <>
+                    <Sofa size={11} strokeWidth={2} /> rested ·{' '}
+                  </>
+                )}
+                {saved.symptoms &&
+                  Object.keys(saved.symptoms).length > 0 &&
+                  (Object.values(saved.symptoms).every((v) => v === 'fine')
+                    ? 'no symptoms'
+                    : 'symptoms tracked')}
               </p>
             )}
           </div>
         </div>
         <button
           onClick={startEditing}
-          style={{ fontSize: 12, color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, flexShrink: 0 }}
+          style={{
+            fontSize: 12,
+            color: 'var(--text-secondary)',
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            padding: 0,
+            flexShrink: 0,
+          }}
         >
           Edit
         </button>
@@ -158,8 +221,22 @@ export function DailyCheckIn() {
   }
 
   return (
-    <div style={{ backgroundColor: 'var(--surface)', borderRadius: 16, padding: '16px', border: '1px solid var(--border)' }}>
-      <p style={{ margin: '0 0 14px 0', fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>
+    <div
+      style={{
+        backgroundColor: 'var(--surface)',
+        borderRadius: 16,
+        padding: '16px',
+        border: '1px solid var(--border)',
+      }}
+    >
+      <p
+        style={{
+          margin: '0 0 14px 0',
+          fontSize: 14,
+          fontWeight: 600,
+          color: 'var(--text-primary)',
+        }}
+      >
         How are you feeling today?
       </p>
 
@@ -177,14 +254,26 @@ export function DailyCheckIn() {
               gap: 5,
               padding: '10px 4px',
               borderRadius: 12,
-              border: selectedMood === m.value ? `1.5px solid ${m.color}` : '1px solid var(--border)',
+              border:
+                selectedMood === m.value ? `1.5px solid ${m.color}` : '1px solid var(--border)',
               backgroundColor: selectedMood === m.value ? `${m.color}18` : 'transparent',
               cursor: 'pointer',
               transition: 'all 0.15s',
             }}
           >
-            <m.Icon size={22} color={selectedMood === m.value ? m.color : 'var(--text-secondary)'} strokeWidth={1.75} />
-            <span style={{ fontSize: 10, color: selectedMood === m.value ? m.color : 'var(--text-secondary)', fontWeight: selectedMood === m.value ? 600 : 400, lineHeight: 1 }}>
+            <m.Icon
+              size={22}
+              color={selectedMood === m.value ? m.color : 'var(--text-secondary)'}
+              strokeWidth={1.75}
+            />
+            <span
+              style={{
+                fontSize: 10,
+                color: selectedMood === m.value ? m.color : 'var(--text-secondary)',
+                fontWeight: selectedMood === m.value ? 600 : 400,
+                lineHeight: 1,
+              }}
+            >
               {m.label}
             </span>
           </button>
@@ -225,8 +314,16 @@ export function DailyCheckIn() {
 
             {/* Movement tracker */}
             <div style={{ marginBottom: 10 }}>
-              <p style={{ margin: '0 0 8px 0', fontSize: 13, color: 'var(--text-secondary)', fontWeight: 500 }}>
-                Did you move your body today? <span style={{ fontSize: 11, opacity: 0.7 }}>(20+ min activity)</span>
+              <p
+                style={{
+                  margin: '0 0 8px 0',
+                  fontSize: 13,
+                  color: 'var(--text-secondary)',
+                  fontWeight: 500,
+                }}
+              >
+                Did you move your body today?{' '}
+                <span style={{ fontSize: 11, opacity: 0.7 }}>(20+ min activity)</span>
               </p>
               <div style={{ display: 'flex', gap: 8 }}>
                 {([true, false] as const).map((val) => (
@@ -241,13 +338,34 @@ export function DailyCheckIn() {
                       fontWeight: moved === val ? 700 : 400,
                       cursor: 'pointer',
                       border: `1px solid ${moved === val ? (val ? 'var(--success)' : '#e05c5c') : 'var(--border)'}`,
-                      backgroundColor: moved === val ? (val ? 'rgba(127,176,105,0.12)' : 'rgba(224,92,92,0.08)') : 'transparent',
-                      color: moved === val ? (val ? 'var(--success)' : '#e05c5c') : 'var(--text-secondary)',
+                      backgroundColor:
+                        moved === val
+                          ? val
+                            ? 'rgba(127,176,105,0.12)'
+                            : 'rgba(224,92,92,0.08)'
+                          : 'transparent',
+                      color:
+                        moved === val
+                          ? val
+                            ? 'var(--success)'
+                            : '#e05c5c'
+                          : 'var(--text-secondary)',
                       transition: 'all 0.15s',
                     }}
                   >
-                    <span style={{ display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center' }}>
-                      {val ? <PersonStanding size={14} strokeWidth={2} /> : <Sofa size={14} strokeWidth={2} />}
+                    <span
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        justifyContent: 'center',
+                      }}
+                    >
+                      {val ? (
+                        <PersonStanding size={14} strokeWidth={2} />
+                      ) : (
+                        <Sofa size={14} strokeWidth={2} />
+                      )}
                       {val ? 'Yes' : 'No'}
                     </span>
                   </button>
@@ -283,10 +401,27 @@ export function DailyCheckIn() {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                     {SYMPTOMS.map(({ key, Icon, label }) => (
                       <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <div style={{ width: 24, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <div
+                          style={{
+                            width: 24,
+                            flexShrink: 0,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
+                        >
                           <Icon size={16} color="var(--text-secondary)" strokeWidth={1.75} />
                         </div>
-                        <span style={{ fontSize: 13, color: 'var(--text-secondary)', width: 90, flexShrink: 0 }}>{label}</span>
+                        <span
+                          style={{
+                            fontSize: 13,
+                            color: 'var(--text-secondary)',
+                            width: 90,
+                            flexShrink: 0,
+                          }}
+                        >
+                          {label}
+                        </span>
                         <div style={{ display: 'flex', gap: 6, flex: 1 }}>
                           {SYMPTOM_LEVELS.map(({ value, label: lvlLabel, color }) => {
                             const isSelected = symptoms[key] === value

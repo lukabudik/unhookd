@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
+import { X } from 'lucide-react'
 
 interface Props {
   isOpen: boolean
@@ -21,19 +22,30 @@ const BREATH_PHASES = [
   { text: '', scale: 1.0, duration: 2000 },
 ]
 
-export function CravingModal({ isOpen, streak, dayNumber, reasons, emergencyContact, onResisted, onDismiss }: Props) {
+export function CravingModal({
+  isOpen,
+  streak,
+  dayNumber,
+  reasons,
+  emergencyContact,
+  onResisted,
+  onDismiss,
+}: Props) {
   const router = useRouter()
   const [phaseIndex, setPhaseIndex] = useState(0)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const idxRef = useRef(0)
+  const openedAtRef = useRef<number | null>(null)
 
   useEffect(() => {
     if (!isOpen) {
       if (timerRef.current) clearTimeout(timerRef.current)
+      openedAtRef.current = null
       return
     }
     idxRef.current = 0
     setPhaseIndex(0)
+    openedAtRef.current = Date.now()
 
     function advance() {
       idxRef.current = (idxRef.current + 1) % BREATH_PHASES.length
@@ -47,20 +59,29 @@ export function CravingModal({ isOpen, streak, dayNumber, reasons, emergencyCont
     }
   }, [isOpen])
 
+  function handleCloseWithCredit() {
+    const elapsed = openedAtRef.current ? Date.now() - openedAtRef.current : 0
+    if (elapsed >= 30000) {
+      onResisted()
+    } else {
+      onDismiss()
+    }
+  }
+
   const phase = BREATH_PHASES[phaseIndex]
 
   function handleLogDose() {
     onDismiss()
-    router.push('/log')
+    router.push('/')
   }
 
   const contextMessage = reasons
     ? reasons
     : streak > 2
-    ? `You've stayed on track ${streak} days in a row. One craving won't break you.`
-    : dayNumber > 1
-    ? `You're on day ${dayNumber} of this journey. Every moment of strength adds up.`
-    : "You're just starting. This discomfort means the taper is working."
+      ? `You've stayed on track ${streak} days in a row. One craving won't break you.`
+      : dayNumber > 1
+        ? `You're on day ${dayNumber} of this journey. Every moment of strength adds up.`
+        : "You're just starting. This discomfort means the taper is working."
 
   return (
     <AnimatePresence>
@@ -88,6 +109,7 @@ export function CravingModal({ isOpen, streak, dayNumber, reasons, emergencyCont
             exit={{ scale: 0.93, opacity: 0, y: 16 }}
             transition={{ type: 'spring', stiffness: 260, damping: 22 }}
             style={{
+              position: 'relative',
               backgroundColor: '#1e1a16',
               borderRadius: 28,
               padding: '32px 24px 24px',
@@ -98,12 +120,38 @@ export function CravingModal({ isOpen, streak, dayNumber, reasons, emergencyCont
               textAlign: 'center',
             }}
           >
+            {/* Close button */}
+            <button
+              onClick={handleCloseWithCredit}
+              style={{
+                position: 'absolute',
+                top: 16,
+                right: 16,
+                width: 32,
+                height: 32,
+                borderRadius: 10,
+                backgroundColor: 'rgba(255,255,255,0.06)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <X size={16} color="var(--text-secondary)" strokeWidth={2} />
+            </button>
+
             {/* Header */}
             <motion.h2
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 8px 0' }}
+              style={{
+                fontSize: 22,
+                fontWeight: 800,
+                color: 'var(--text-primary)',
+                margin: '0 0 8px 0',
+              }}
             >
               This will pass.
             </motion.h2>
@@ -138,7 +186,7 @@ export function CravingModal({ isOpen, streak, dayNumber, reasons, emergencyCont
                 <motion.div
                   animate={{ scale: phase.scale }}
                   transition={{
-                    duration: phase.duration / 1000 * 0.85,
+                    duration: (phase.duration / 1000) * 0.85,
                     ease: phase.scale > 1 ? [0.4, 0, 0.6, 1] : [0.4, 0, 0.6, 1],
                   }}
                   style={{
@@ -153,14 +201,15 @@ export function CravingModal({ isOpen, streak, dayNumber, reasons, emergencyCont
                 <motion.div
                   animate={{ scale: phase.scale > 1 ? 0.8 : 1 }}
                   transition={{
-                    duration: phase.duration / 1000 * 0.85,
+                    duration: (phase.duration / 1000) * 0.85,
                     ease: [0.4, 0, 0.6, 1],
                   }}
                   style={{
                     position: 'absolute',
                     inset: 22,
                     borderRadius: '50%',
-                    background: 'radial-gradient(circle at 40% 35%, rgba(127, 176, 105, 0.35), rgba(127, 176, 105, 0.12))',
+                    background:
+                      'radial-gradient(circle at 40% 35%, rgba(127, 176, 105, 0.35), rgba(127, 176, 105, 0.12))',
                     border: '1px solid rgba(127, 176, 105, 0.4)',
                   }}
                 />

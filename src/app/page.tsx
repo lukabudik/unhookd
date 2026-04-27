@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAppStore } from '@/lib/store'
 import { TaperProgress } from '@/components/TaperProgress'
@@ -9,15 +8,23 @@ import { MilestoneCelebration } from '@/components/MilestoneCelebration'
 import { CravingModal } from '@/components/CravingModal'
 import { useNotifications } from '@/hooks/useNotifications'
 import { useFirestore } from '@/hooks/useFirestore'
-import { getGreeting, getDaysSincePlanStart, formatGrams, getDailyTargetForDate, calculateStreakFromLocal, getTodayKey, getContextualQuote, getPresets } from '@/lib/utils'
+import {
+  getGreeting,
+  getDaysSincePlanStart,
+  formatGrams,
+  getDailyTargetForDate,
+  calculateStreakFromLocal,
+  getTodayKey,
+  getPresets,
+} from '@/lib/utils'
 import { checkNewMilestones, markMilestoneCelebrated, Milestone } from '@/lib/milestones'
-import { detectPhase, computeSymptomScores, getSuggestedSupplements, hasRecentSymptomData } from '@/lib/phases'
+import { detectPhase } from '@/lib/phases'
 import { PhaseGuidanceCard } from '@/components/PhaseGuidanceCard'
-import { SymptomSuggestionsCard } from '@/components/SymptomSuggestionsCard'
 import { QuickLogSheet } from '@/components/QuickLogSheet'
 import { DailyCheckIn } from '@/components/DailyCheckIn'
 import { format } from 'date-fns'
-import { Bell, Shield, Waves, Flame, Frown, Meh, Smile } from 'lucide-react'
+import { Bell, Shield, Waves, Frown, Meh, Smile } from 'lucide-react'
+import Link from 'next/link'
 
 function MoodIcon({ mood }: { mood?: string }) {
   if (mood === 'rough') return <Frown size={16} color="var(--text-secondary)" strokeWidth={1.75} />
@@ -40,11 +47,13 @@ export default function HomePage() {
   const [editingEntry, setEditingEntry] = useState<import('@/lib/store').IntakeEntry | null>(null)
   const [todayResistances, setTodayResistances] = useState(0)
   const [showResistanceToast, setShowResistanceToast] = useState(false)
+  const [dosesExpanded, setDosesExpanded] = useState(false)
 
   useEffect(() => {
     if (typeof window === 'undefined') return
-    const dismissed = localStorage.getItem('unhookd_notif_dismissed')
-    if (!dismissed && permission === 'default' && taperPlan) {
+    const dismissed = localStorage.getItem('unhookd_notif_dismissed_week')
+    const weekKey = `${new Date().getFullYear()}-W${Math.ceil(new Date().getDate() / 7)}`
+    if (dismissed !== weekKey && permission === 'default' && taperPlan) {
       setShowNotifBanner(true)
     }
     const todayKey = getTodayKey()
@@ -52,9 +61,11 @@ export default function HomePage() {
     if (saved) setTodayResistances(parseInt(saved, 10) || 0)
   }, [permission, taperPlan])
 
-  // Recalculate streak and check milestones whenever plan or today's intakes change
   useEffect(() => {
-    if (!taperPlan) { setStreak(0); return }
+    if (!taperPlan) {
+      setStreak(0)
+      return
+    }
     const newStreak = calculateStreakFromLocal(taperPlan)
     setStreak(newStreak)
     const milestones = checkNewMilestones(taperPlan, newStreak)
@@ -73,7 +84,8 @@ export default function HomePage() {
   }
 
   function dismissBanner() {
-    localStorage.setItem('unhookd_notif_dismissed', 'true')
+    const weekKey = `${new Date().getFullYear()}-W${Math.ceil(new Date().getDate() / 7)}`
+    localStorage.setItem('unhookd_notif_dismissed_week', weekKey)
     setNotifDismissed(true)
     setShowNotifBanner(false)
   }
@@ -101,39 +113,61 @@ export default function HomePage() {
   }
 
   const todayTotal = getTodayTotal()
-  const dailyTarget = taperPlan
-    ? getDailyTargetForDate(taperPlan, new Date())
-    : 10
-
+  const dailyTarget = taperPlan ? getDailyTargetForDate(taperPlan, new Date()) : 10
   const dayNumber = taperPlan ? getDaysSincePlanStart(taperPlan.startDate) + 1 : 1
   const greeting = getGreeting()
 
   const weekNumber = taperPlan
-    ? Math.min(Math.ceil(getDaysSincePlanStart(taperPlan.startDate) / 7) + 1, taperPlan.weeksToTarget)
+    ? Math.min(
+        Math.ceil(getDaysSincePlanStart(taperPlan.startDate) / 7) + 1,
+        taperPlan.weeksToTarget
+      )
     : null
-  const journeyProgressPct = taperPlan && taperPlan.weeksToTarget > 0
-    ? Math.min(100, Math.round((getDaysSincePlanStart(taperPlan.startDate) / (taperPlan.weeksToTarget * 7)) * 100))
-    : 0
 
   const phaseInfo = taperPlan ? detectPhase(taperPlan) : null
-  const isPostZero = !!(phaseInfo?.isPostZero)
+  const isPostZero = !!phaseInfo?.isPostZero
   const daysClean = phaseInfo?.daysPostZero ?? 0
 
-  const symptomScores = taperPlan ? computeSymptomScores(7) : null
-  const suggestedSupplements = (phaseInfo && symptomScores && hasRecentSymptomData(3))
-    ? getSuggestedSupplements(symptomScores, phaseInfo.phase, 3)
-    : []
+  const lastDoseEntry =
+    todayIntakes.length > 0
+      ? [...todayIntakes].sort(
+          (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+        )[0]
+      : null
 
-  const lastDoseEntry = todayIntakes.length > 0
-    ? [...todayIntakes].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0]
-    : null
+  // Weekly context for TaperProgress
+  const weeklyContext = (() => {
+    if (!taperPlan || isPostZero) return undefined
+    const journeyDays = getDaysSincePlanStart(taperPlan.startDate)
+    if (journeyDays < 1) return undefined
+    const totalDays = taperPlan.weeksToTarget * 7
+    const reduction = taperPlan.startAmount - taperPlan.targetAmount
+    // Expected cumulative dose by today vs actual
+    const expectedCumulative =
+      taperPlan.startAmount * journeyDays -
+      ((reduction / totalDays) * journeyDays * journeyDays) / 2
+    // Just compare today's dose vs target
+    if (todayTotal === 0) return undefined
+    const diff = dailyTarget - todayTotal
+    if (diff > 0.4) return `${formatGrams(diff)} under target today`
+    if (diff < -0.4) return `${formatGrams(Math.abs(diff))} over target`
+    return 'Right on target'
+  })()
 
   function timeSince(ts: Date): string {
     const diffM = Math.floor((Date.now() - new Date(ts).getTime()) / 60000)
     if (diffM < 60) return `${diffM}m ago`
-    const h = Math.floor(diffM / 60); const m = diffM % 60
+    const h = Math.floor(diffM / 60)
+    const m = diffM % 60
     return m > 0 ? `${h}h ${m}m ago` : `${h}h ago`
   }
+
+  const sortedIntakes = [...todayIntakes].sort(
+    (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+  )
+  const DOSES_PREVIEW_COUNT = 3
+  const visibleIntakes = dosesExpanded ? sortedIntakes : sortedIntakes.slice(0, DOSES_PREVIEW_COUNT)
+  const hiddenCount = sortedIntakes.length - DOSES_PREVIEW_COUNT
 
   return (
     <>
@@ -150,7 +184,10 @@ export default function HomePage() {
       <EditDoseSheet
         entry={editingEntry}
         dailyTarget={dailyTarget}
-        onSave={async (id, updates) => { await updateIntake(id, updates); setEditingEntry(null) }}
+        onSave={async (id, updates) => {
+          await updateIntake(id, updates)
+          setEditingEntry(null)
+        }}
         onDismiss={() => setEditingEntry(null)}
       />
       <CravingModal
@@ -196,16 +233,15 @@ export default function HomePage() {
       </AnimatePresence>
 
       <div className="page-container" style={{ paddingTop: 24, paddingBottom: 24 }}>
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35 }}
-        style={{ display: 'flex', flexDirection: 'column', gap: 20 }}
-      >
-        {/* Header */}
-        <div>
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-            <div style={{ flex: 1 }}>
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35 }}
+          style={{ display: 'flex', flexDirection: 'column', gap: 20 }}
+        >
+          {/* Compact header */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div>
               <p
                 style={{
                   fontSize: 13,
@@ -219,565 +255,519 @@ export default function HomePage() {
               </p>
               <h1
                 style={{
-                  fontSize: 24,
+                  fontSize: 22,
                   fontWeight: 700,
                   color: 'var(--text-primary)',
-                  margin: '4px 0 0 0',
+                  margin: '2px 0 0 0',
                   lineHeight: 1.2,
                 }}
               >
-                {taperPlan ? `Day ${dayNumber} of your journey` : 'Welcome to Unhookd'}
+                {taperPlan && weekNumber
+                  ? `Day ${dayNumber} · Week ${weekNumber} of ${taperPlan.weeksToTarget}`
+                  : 'Welcome to Unhookd'}
               </h1>
             </div>
-            <Link
-              href="/settings"
-              aria-label="Settings"
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: 10,
-                border: '1px solid var(--border)',
-                backgroundColor: 'var(--surface)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-                textDecoration: 'none',
-                marginTop: 2,
-              }}
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path
-                  d="M12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15Z"
-                  stroke="var(--text-secondary)"
-                  strokeWidth="1.75"
-                />
-                <path
-                  d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"
-                  stroke="var(--text-secondary)"
-                  strokeWidth="1.75"
-                />
-              </svg>
-            </Link>
+            {todayResistances > 0 && (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 5,
+                  backgroundColor: 'rgba(127,176,105,0.1)',
+                  border: '1px solid rgba(127,176,105,0.2)',
+                  borderRadius: 20,
+                  padding: '4px 10px',
+                }}
+              >
+                <Shield size={13} color="var(--success)" strokeWidth={2} />
+                <span style={{ fontSize: 12, color: 'var(--success)', fontWeight: 600 }}>
+                  {todayResistances} resisted
+                </span>
+              </div>
+            )}
           </div>
 
-          {/* Journey progress bar */}
-          {taperPlan && weekNumber && (
-            <div style={{ marginTop: 12 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
-                  Week {weekNumber} of {taperPlan.weeksToTarget}
-                </span>
-                <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
-                  {journeyProgressPct}% complete
-                </span>
-              </div>
-              <div
+          {/* Notification banner — at most once per week */}
+          <AnimatePresence>
+            {showNotifBanner && !notifDismissed && (
+              <motion.div
+                initial={{ opacity: 0, height: 0, overflow: 'hidden' }}
+                animate={{ opacity: 1, height: 'auto', overflow: 'visible' }}
+                exit={{ opacity: 0, height: 0, overflow: 'hidden' }}
+                transition={{ duration: 0.25 }}
+              >
+                <div
+                  style={{
+                    backgroundColor: 'rgba(232,168,124,0.08)',
+                    border: '1px solid rgba(232,168,124,0.25)',
+                    borderRadius: 16,
+                    padding: '14px 16px',
+                    display: 'flex',
+                    gap: 12,
+                    alignItems: 'flex-start',
+                  }}
+                >
+                  <Bell
+                    size={22}
+                    color="var(--primary)"
+                    strokeWidth={1.75}
+                    style={{ flexShrink: 0, marginTop: 2 }}
+                  />
+                  <div style={{ flex: 1 }}>
+                    <p
+                      style={{
+                        fontSize: 14,
+                        fontWeight: 600,
+                        color: 'var(--text-primary)',
+                        margin: '0 0 4px 0',
+                      }}
+                    >
+                      Enable reminders?
+                    </p>
+                    <p
+                      style={{
+                        fontSize: 12,
+                        color: 'var(--text-secondary)',
+                        margin: '0 0 12px 0',
+                        lineHeight: 1.4,
+                      }}
+                    >
+                      Get a gentle daily nudge to log your dose and stay on track.
+                    </p>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button
+                        onClick={enableNotifications}
+                        style={{
+                          flex: 1,
+                          height: 36,
+                          borderRadius: 10,
+                          backgroundColor: 'var(--primary)',
+                          color: 'var(--bg)',
+                          fontWeight: 600,
+                          fontSize: 13,
+                          border: 'none',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        Enable
+                      </button>
+                      <button
+                        onClick={dismissBanner}
+                        style={{
+                          height: 36,
+                          padding: '0 14px',
+                          borderRadius: 10,
+                          backgroundColor: 'transparent',
+                          color: 'var(--text-secondary)',
+                          fontWeight: 500,
+                          fontSize: 13,
+                          border: '1px solid var(--border)',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        Not now
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Setup prompt if no plan */}
+          {!taperPlan && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.2 }}
+              style={{
+                backgroundColor: 'var(--surface)',
+                borderRadius: 20,
+                padding: 20,
+                border: '1px solid var(--border)',
+              }}
+            >
+              <p
                 style={{
-                  height: 4,
-                  backgroundColor: 'var(--border)',
-                  borderRadius: 4,
-                  overflow: 'hidden',
+                  color: 'var(--text-primary)',
+                  fontWeight: 600,
+                  fontSize: 16,
+                  margin: '0 0 8px 0',
                 }}
               >
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: `${journeyProgressPct}%` }}
-                  transition={{ duration: 0.8, ease: 'easeOut', delay: 0.3 }}
-                  style={{
-                    height: '100%',
-                    backgroundColor: journeyProgressPct >= 75
-                      ? 'var(--success)'
-                      : journeyProgressPct >= 50
-                      ? 'var(--primary)'
-                      : 'var(--primary-muted)',
-                    borderRadius: 4,
-                  }}
-                />
-              </div>
-            </div>
+                Set up your taper plan
+              </p>
+              <p
+                style={{
+                  color: 'var(--text-secondary)',
+                  fontSize: 14,
+                  margin: '0 0 16px 0',
+                  lineHeight: 1.5,
+                }}
+              >
+                Tell us where you&apos;re starting and where you want to be.
+              </p>
+              <Link
+                href="/plan"
+                style={{
+                  display: 'block',
+                  backgroundColor: 'var(--primary)',
+                  color: 'var(--bg)',
+                  textAlign: 'center',
+                  padding: '14px',
+                  borderRadius: 12,
+                  fontWeight: 700,
+                  fontSize: 15,
+                  textDecoration: 'none',
+                }}
+              >
+                Create my plan →
+              </Link>
+            </motion.div>
           )}
-        </div>
 
-        {/* Notification permission banner */}
-        <AnimatePresence>
-          {showNotifBanner && !notifDismissed && (
-            <motion.div
-              initial={{ opacity: 0, height: 0, overflow: 'hidden' }}
-              animate={{ opacity: 1, height: 'auto', overflow: 'visible' }}
-              exit={{ opacity: 0, height: 0, overflow: 'hidden' }}
-              transition={{ duration: 0.25 }}
+          {/* Progress ring OR post-zero display */}
+          {isPostZero ? (
+            <div
+              style={{
+                backgroundColor: 'var(--surface)',
+                borderRadius: 24,
+                padding: '28px 20px',
+                border: '1px solid rgba(127, 176, 105, 0.3)',
+                background:
+                  'linear-gradient(135deg, rgba(127,176,105,0.08) 0%, var(--surface) 100%)',
+                textAlign: 'center',
+              }}
             >
               <div
                 style={{
-                  backgroundColor: 'rgba(232,168,124,0.08)',
-                  border: '1px solid rgba(232,168,124,0.25)',
-                  borderRadius: 16,
-                  padding: '14px 16px',
-                  display: 'flex',
-                  gap: 12,
-                  alignItems: 'flex-start',
+                  fontSize: 64,
+                  fontWeight: 800,
+                  color: 'var(--success)',
+                  lineHeight: 1,
+                  letterSpacing: '-0.03em',
                 }}
               >
-                <Bell size={22} color="var(--primary)" strokeWidth={1.75} style={{ flexShrink: 0, marginTop: 2 }} />
-                <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 4px 0' }}>
-                    Enable reminders?
-                  </p>
-                  <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '0 0 12px 0', lineHeight: 1.4 }}>
-                    Get a gentle daily nudge to log your dose and stay on track.
-                  </p>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <button
-                      onClick={enableNotifications}
-                      style={{
-                        flex: 1,
-                        height: 36,
-                        borderRadius: 10,
-                        backgroundColor: 'var(--primary)',
-                        color: 'var(--bg)',
-                        fontWeight: 600,
-                        fontSize: 13,
-                        border: 'none',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      Enable
-                    </button>
-                    <button
-                      onClick={dismissBanner}
-                      style={{
-                        height: 36,
-                        padding: '0 14px',
-                        borderRadius: 10,
-                        backgroundColor: 'transparent',
-                        color: 'var(--text-secondary)',
-                        fontWeight: 500,
-                        fontSize: 13,
-                        border: '1px solid var(--border)',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      Not now
-                    </button>
-                  </div>
-                </div>
+                {daysClean}
+              </div>
+              <div style={{ fontSize: 16, color: 'var(--success)', fontWeight: 600, marginTop: 6 }}>
+                {daysClean === 1 ? 'day clean' : 'days clean'}
+              </div>
+              <div
+                style={{
+                  fontSize: 13,
+                  color: 'var(--text-secondary)',
+                  marginTop: 10,
+                  lineHeight: 1.5,
+                }}
+              >
+                {daysClean <= 10
+                  ? 'The hardest part of the physical transition is nearly behind you.'
+                  : daysClean <= 45
+                    ? 'Your body has passed the acute phase. The brain is still recalibrating — keep going.'
+                    : 'Every week now brings real neurological recovery. The fog continues to lift.'}
+              </div>
+            </div>
+          ) : taperPlan ? (
+            <TaperProgress
+              current={todayTotal}
+              target={dailyTarget}
+              weeklyContext={weeklyContext}
+            />
+          ) : null}
+
+          {/* Primary CTA — Log dose */}
+          {taperPlan && !isPostZero && (
+            <motion.button
+              onClick={() => setShowQuickLog(true)}
+              whileTap={{ scale: 0.97 }}
+              style={{
+                height: 58,
+                borderRadius: 18,
+                backgroundColor: 'var(--primary)',
+                color: 'var(--bg)',
+                fontWeight: 700,
+                fontSize: 17,
+                border: 'none',
+                cursor: 'pointer',
+                letterSpacing: '0.01em',
+                boxShadow: '0 4px 16px rgba(232,168,124,0.25)',
+              }}
+            >
+              {lastDoseEntry
+                ? `+ Log dose  ·  last ${timeSince(new Date(lastDoseEntry.timestamp))}`
+                : '+ Log first dose today'}
+            </motion.button>
+          )}
+
+          {/* Over-target compassion state */}
+          {taperPlan && todayTotal > dailyTarget && todayIntakes.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              style={{
+                backgroundColor: 'rgba(224, 90, 90, 0.07)',
+                border: '1px solid rgba(224, 90, 90, 0.2)',
+                borderRadius: 16,
+                padding: '14px 16px',
+                display: 'flex',
+                gap: 10,
+                alignItems: 'flex-start',
+              }}
+            >
+              <Waves
+                size={20}
+                color="#e05a5a"
+                strokeWidth={1.75}
+                style={{ flexShrink: 0, marginTop: 2 }}
+              />
+              <div>
+                <p style={{ margin: '0 0 2px 0', fontSize: 14, fontWeight: 600, color: '#e05a5a' }}>
+                  Over today&apos;s goal — that&apos;s okay.
+                </p>
+                <p
+                  style={{
+                    margin: 0,
+                    fontSize: 12,
+                    color: 'var(--text-secondary)',
+                    lineHeight: 1.5,
+                  }}
+                >
+                  One hard day doesn&apos;t erase your progress. Tomorrow is a fresh start. If this
+                  keeps happening, consider{' '}
+                  <Link
+                    href="/plan"
+                    style={{ color: 'var(--primary)', textDecoration: 'none', fontWeight: 600 }}
+                  >
+                    holding your dose
+                  </Link>{' '}
+                  for a week.
+                </p>
               </div>
             </motion.div>
           )}
-        </AnimatePresence>
 
-        {/* Setup prompt if no plan */}
-        {!taperPlan && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
-            style={{
-              backgroundColor: 'var(--surface)',
-              borderRadius: 20,
-              padding: 20,
-              border: '1px solid var(--border)',
-            }}
-          >
-            <p style={{ color: 'var(--text-primary)', fontWeight: 600, fontSize: 16, margin: '0 0 8px 0' }}>
-              Set up your taper plan
-            </p>
-            <p style={{ color: 'var(--text-secondary)', fontSize: 14, margin: '0 0 16px 0', lineHeight: 1.5 }}>
-              To get the most out of Unhookd, tell us where you&apos;re starting and where you want to be.
-            </p>
-            <Link
-              href="/plan"
-              style={{
-                display: 'block',
-                backgroundColor: 'var(--primary)',
-                color: 'var(--bg)',
-                textAlign: 'center',
-                padding: '14px',
-                borderRadius: 12,
-                fontWeight: 700,
-                fontSize: 15,
-                textDecoration: 'none',
-              }}
-            >
-              Create my plan →
-            </Link>
-          </motion.div>
-        )}
-
-        {/* Progress ring — replaced by days-clean display when post-zero */}
-        {isPostZero ? (
-          <div
-            style={{
-              backgroundColor: 'var(--surface)',
-              borderRadius: 24,
-              padding: '28px 20px',
-              border: '1px solid rgba(127, 176, 105, 0.3)',
-              background: 'linear-gradient(135deg, rgba(127,176,105,0.08) 0%, var(--surface) 100%)',
-              textAlign: 'center',
-            }}
-          >
-            <div style={{ fontSize: 64, fontWeight: 800, color: 'var(--success)', lineHeight: 1, letterSpacing: '-0.03em' }}>
-              {daysClean}
-            </div>
-            <div style={{ fontSize: 16, color: 'var(--success)', fontWeight: 600, marginTop: 6 }}>
-              {daysClean === 1 ? 'day clean' : 'days clean'}
-            </div>
-            <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 10, lineHeight: 1.5 }}>
-              {daysClean <= 10
-                ? 'The hardest part of the physical transition is nearly behind you.'
-                : daysClean <= 45
-                ? 'Your body has passed the acute phase. The brain is still recalibrating — keep going.'
-                : 'Every week now brings real neurological recovery. The fog continues to lift.'}
-            </div>
-          </div>
-        ) : (
-          <TaperProgress current={todayTotal} target={dailyTarget} />
-        )}
-
-        {/* Phase guidance card */}
-        {phaseInfo && <PhaseGuidanceCard phaseInfo={phaseInfo} />}
-
-        {/* Over-target compassion state */}
-        {taperPlan && todayTotal > dailyTarget && todayIntakes.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            style={{
-              backgroundColor: 'rgba(224, 90, 90, 0.07)',
-              border: '1px solid rgba(224, 90, 90, 0.2)',
-              borderRadius: 16,
-              padding: '14px 16px',
-              display: 'flex',
-              gap: 10,
-              alignItems: 'flex-start',
-            }}
-          >
-            <Waves size={20} color="#e05a5a" strokeWidth={1.75} style={{ flexShrink: 0, marginTop: 2 }} />
-            <div>
-              <p style={{ margin: '0 0 2px 0', fontSize: 14, fontWeight: 600, color: '#e05a5a' }}>
-                Over today&apos;s goal — that&apos;s okay.
-              </p>
-              <p style={{ margin: 0, fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                One hard day doesn&apos;t erase your progress. Tomorrow is a fresh start. If this keeps happening, consider{' '}
-                <a href="/plan" style={{ color: 'var(--primary)', textDecoration: 'none', fontWeight: 600 }}>holding your dose</a>{' '}
-                for a week.
-              </p>
-            </div>
-          </motion.div>
-        )}
-
-        {/* Streak */}
-        {taperPlan && (
-          <div
-            style={{
-              display: 'flex',
-              gap: 12,
-            }}
-          >
+          {/* Today's doses */}
+          <div>
             <div
               style={{
-                flex: 1,
-                backgroundColor: 'var(--surface)',
-                borderRadius: 16,
-                padding: '14px 16px',
-                border: '1px solid var(--border)',
-                textAlign: 'center',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: 12,
               }}
             >
-              <div style={{ fontSize: 26, fontWeight: 700, color: 'var(--primary)' }}>
-                {dayNumber}
-              </div>
-              <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 2 }}>
-                days in
-              </div>
-            </div>
-            <div
-              style={{
-                flex: 1,
-                backgroundColor: 'var(--surface)',
-                borderRadius: 16,
-                padding: '14px 16px',
-                border: '1px solid var(--border)',
-                textAlign: 'center',
-              }}
-            >
-              <div style={{ fontSize: 26, fontWeight: 700, color: 'var(--success)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
-                {streak}<Flame size={22} color="var(--success)" strokeWidth={1.75} />
-              </div>
-              <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 2 }}>
-                day streak
-              </div>
-            </div>
-            <div
-              style={{
-                flex: 1,
-                backgroundColor: 'var(--surface)',
-                borderRadius: 16,
-                padding: '14px 16px',
-                border: '1px solid var(--border)',
-                textAlign: 'center',
-              }}
-            >
-              <div style={{ fontSize: 26, fontWeight: 700, color: 'var(--text-primary)' }}>
-                {formatGrams(taperPlan.targetAmount)}
-              </div>
-              <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 2 }}>
-                goal
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Resistance count */}
-        {taperPlan && todayResistances > 0 && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            style={{
-              backgroundColor: 'rgba(127, 176, 105, 0.08)',
-              border: '1px solid rgba(127, 176, 105, 0.2)',
-              borderRadius: 14,
-              padding: '10px 14px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-            }}
-          >
-            <Shield size={16} color="var(--success)" strokeWidth={1.75} />
-            <span style={{ fontSize: 13, color: 'var(--success)', fontWeight: 600 }}>
-              {todayResistances} craving{todayResistances !== 1 ? 's' : ''} resisted today
-            </span>
-          </motion.div>
-        )}
-
-        {/* Today's doses */}
-        <div>
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: 12,
-            }}
-          >
-            <div>
-              <h2 style={{ fontSize: 16, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
-                Today&apos;s doses
-              </h2>
-              {lastDoseEntry && (
-                <p style={{ margin: '2px 0 0 0', fontSize: 11, color: 'var(--text-secondary)' }}>
-                  Last: {timeSince(new Date(lastDoseEntry.timestamp))}
-                </p>
-              )}
-            </div>
-            <button
-              onClick={() => setShowQuickLog(true)}
-              style={{
-                fontSize: 13,
-                color: 'var(--primary)',
-                fontWeight: 600,
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                padding: 0,
-              }}
-            >
-              + Add
-            </button>
-          </div>
-
-          {todayIntakes.length === 0 ? (
-            <div
-              style={{
-                backgroundColor: 'var(--surface)',
-                borderRadius: 16,
-                padding: '20px 16px',
-                border: '1px solid var(--border)',
-                textAlign: 'center',
-              }}
-            >
-              <p style={{ color: 'var(--text-secondary)', fontSize: 14, margin: 0 }}>
-                Nothing logged yet today
-              </p>
-              <button
-                onClick={() => setShowQuickLog(true)}
-                style={{
-                  display: 'inline-block',
-                  marginTop: 12,
-                  backgroundColor: 'var(--primary)',
-                  color: 'var(--bg)',
-                  padding: '10px 20px',
-                  borderRadius: 10,
-                  fontWeight: 600,
-                  fontSize: 14,
-                  border: 'none',
-                  cursor: 'pointer',
-                }}
+              <h2
+                style={{ fontSize: 16, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}
               >
-                Log first dose
-              </button>
-            </div>
-          ) : (
-            <AnimatePresence>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {[...todayIntakes]
-                .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-                .map((entry, i) => (
-                  <motion.div
-                    key={entry.id}
-                    initial={{ opacity: 0, x: -8 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 24, transition: { duration: 0.18 } }}
-                    transition={{ delay: i * 0.05 }}
+                Today&apos;s doses
+                {todayIntakes.length > 0 && (
+                  <span
                     style={{
-                      backgroundColor: 'var(--surface)',
-                      borderRadius: 14,
-                      padding: '12px 14px',
-                      border: '1px solid var(--border)',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      gap: 8,
+                      fontSize: 13,
+                      fontWeight: 400,
+                      color: 'var(--text-secondary)',
+                      marginLeft: 8,
                     }}
                   >
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span style={{ fontWeight: 700, fontSize: 18, color: 'var(--primary)' }}>
-                          {formatGrams(entry.amount)}
-                        </span>
-                        <MoodIcon mood={entry.mood} />
-                      </div>
-                      {entry.note && (
-                        <p
-                          style={{
-                            margin: '4px 0 0 0',
-                            fontSize: 12,
-                            color: 'var(--text-secondary)',
-                            lineHeight: 1.3,
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                          }}
-                        >
-                          {entry.note}
-                        </p>
-                      )}
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-                      <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
-                        {format(new Date(entry.timestamp), 'h:mm a')}
-                      </span>
-                      <button
-                        onClick={() => setEditingEntry(entry)}
-                        aria-label="Edit dose"
-                        style={{
-                          width: 26,
-                          height: 26,
-                          borderRadius: 8,
-                          border: '1px solid var(--border)',
-                          backgroundColor: 'transparent',
-                          color: 'var(--text-secondary)',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: 12,
-                          lineHeight: 1,
-                          padding: 0,
-                          flexShrink: 0,
-                        }}
-                      >
-                        ✎
-                      </button>
-                      <button
-                        onClick={() => deleteIntake(entry.id)}
-                        aria-label="Delete dose"
-                        style={{
-                          width: 26,
-                          height: 26,
-                          borderRadius: 8,
-                          border: '1px solid var(--border)',
-                          backgroundColor: 'transparent',
-                          color: 'var(--text-secondary)',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: 14,
-                          lineHeight: 1,
-                          padding: 0,
-                          flexShrink: 0,
-                        }}
-                      >
-                        ×
-                      </button>
-                    </div>
-                  </motion.div>
-                ))}
+                    {formatGrams(todayTotal)} total
+                  </span>
+                )}
+              </h2>
+              {!taperPlan && (
+                <button
+                  onClick={() => setShowQuickLog(true)}
+                  style={{
+                    fontSize: 13,
+                    color: 'var(--primary)',
+                    fontWeight: 600,
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: 0,
+                  }}
+                >
+                  + Add
+                </button>
+              )}
             </div>
-            </AnimatePresence>
+
+            {todayIntakes.length === 0 ? (
+              <div
+                style={{
+                  backgroundColor: 'var(--surface)',
+                  borderRadius: 16,
+                  padding: '20px 16px',
+                  border: '1px solid var(--border)',
+                  textAlign: 'center',
+                }}
+              >
+                <p style={{ color: 'var(--text-secondary)', fontSize: 14, margin: 0 }}>
+                  Nothing logged yet today
+                </p>
+              </div>
+            ) : (
+              <>
+                <AnimatePresence>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {visibleIntakes.map((entry, i) => (
+                      <motion.div
+                        key={entry.id}
+                        initial={{ opacity: 0, x: -8 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: 24, transition: { duration: 0.18 } }}
+                        transition={{ delay: i * 0.04 }}
+                        style={{
+                          backgroundColor: 'var(--surface)',
+                          borderRadius: 14,
+                          padding: '12px 14px',
+                          border: '1px solid var(--border)',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          gap: 8,
+                        }}
+                      >
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span
+                              style={{ fontWeight: 700, fontSize: 18, color: 'var(--primary)' }}
+                            >
+                              {formatGrams(entry.amount)}
+                            </span>
+                            <MoodIcon mood={entry.mood} />
+                          </div>
+                          {entry.note && (
+                            <p
+                              style={{
+                                margin: '4px 0 0 0',
+                                fontSize: 12,
+                                color: 'var(--text-secondary)',
+                                lineHeight: 1.3,
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                              }}
+                            >
+                              {entry.note}
+                            </p>
+                          )}
+                        </div>
+                        <div
+                          style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}
+                        >
+                          <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
+                            {format(new Date(entry.timestamp), 'h:mm a')}
+                          </span>
+                          <button
+                            onClick={() => setEditingEntry(entry)}
+                            aria-label="Edit dose"
+                            style={{
+                              width: 26,
+                              height: 26,
+                              borderRadius: 8,
+                              border: '1px solid var(--border)',
+                              backgroundColor: 'transparent',
+                              color: 'var(--text-secondary)',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: 12,
+                              lineHeight: 1,
+                              padding: 0,
+                              flexShrink: 0,
+                            }}
+                          >
+                            ✎
+                          </button>
+                          <button
+                            onClick={() => deleteIntake(entry.id)}
+                            aria-label="Delete dose"
+                            style={{
+                              width: 26,
+                              height: 26,
+                              borderRadius: 8,
+                              border: '1px solid var(--border)',
+                              backgroundColor: 'transparent',
+                              color: 'var(--text-secondary)',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: 14,
+                              lineHeight: 1,
+                              padding: 0,
+                              flexShrink: 0,
+                            }}
+                          >
+                            ×
+                          </button>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                </AnimatePresence>
+
+                {/* Show more / less toggle */}
+                {sortedIntakes.length > DOSES_PREVIEW_COUNT && (
+                  <button
+                    onClick={() => setDosesExpanded(!dosesExpanded)}
+                    style={{
+                      marginTop: 8,
+                      width: '100%',
+                      height: 36,
+                      borderRadius: 10,
+                      backgroundColor: 'transparent',
+                      border: '1px solid var(--border)',
+                      color: 'var(--text-secondary)',
+                      fontSize: 13,
+                      cursor: 'pointer',
+                      fontWeight: 500,
+                    }}
+                  >
+                    {dosesExpanded
+                      ? 'Show less'
+                      : `Show ${hiddenCount} more dose${hiddenCount !== 1 ? 's' : ''}`}
+                  </button>
+                )}
+              </>
+            )}
+          </div>
+
+          {/* Daily check-in */}
+          {taperPlan && <DailyCheckIn />}
+
+          {/* Phase guidance card — below check-in, less intrusive */}
+          {phaseInfo && <PhaseGuidanceCard phaseInfo={phaseInfo} />}
+
+          {/* Craving SOS — subtle */}
+          {taperPlan && (
+            <button
+              onClick={() => setShowCravingModal(true)}
+              style={{
+                width: '100%',
+                padding: '14px 16px',
+                borderRadius: 16,
+                backgroundColor: 'var(--surface)',
+                border: '1px solid var(--border)',
+                color: 'var(--text-secondary)',
+                fontSize: 14,
+                fontWeight: 500,
+                cursor: 'pointer',
+                textAlign: 'center',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+              }}
+            >
+              <Waves size={18} color="var(--text-secondary)" strokeWidth={1.75} />
+              <span>Feeling a craving? Breathe through it →</span>
+            </button>
           )}
-        </div>
-
-        {/* Daily check-in */}
-        {taperPlan && <DailyCheckIn />}
-
-        {/* Symptom-based supplement suggestions */}
-        {suggestedSupplements.length > 0 && (
-          <SymptomSuggestionsCard supplements={suggestedSupplements} />
-        )}
-
-        {/* Craving SOS button */}
-        {taperPlan && (
-          <button
-            onClick={() => setShowCravingModal(true)}
-            style={{
-              width: '100%',
-              padding: '14px 16px',
-              borderRadius: 16,
-              backgroundColor: 'var(--surface)',
-              border: '1px solid var(--border)',
-              color: 'var(--text-secondary)',
-              fontSize: 14,
-              fontWeight: 500,
-              cursor: 'pointer',
-              textAlign: 'center',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 8,
-            }}
-          >
-            <Waves size={18} color="var(--text-secondary)" strokeWidth={1.75} />
-            <span>Feeling a craving? Breathe through it →</span>
-          </button>
-        )}
-
-        {/* Motivational footer — contextual quote */}
-        <div
-          style={{
-            backgroundColor: 'var(--surface)',
-            borderRadius: 16,
-            padding: '16px',
-            border: '1px solid var(--border)',
-          }}
-        >
-          <p
-            style={{
-              fontSize: 14,
-              color: 'var(--text-secondary)',
-              margin: 0,
-              lineHeight: 1.6,
-              fontStyle: 'italic',
-              textAlign: 'center',
-            }}
-          >
-            &ldquo;{getContextualQuote(dayNumber, streak, journeyProgressPct)}&rdquo;
-          </p>
-        </div>
-      </motion.div>
-    </div>
+        </motion.div>
+      </div>
     </>
   )
 }
@@ -800,7 +790,10 @@ function EditDoseSheet({
 }: {
   entry: import('@/lib/store').IntakeEntry | null
   dailyTarget: number
-  onSave: (id: string, updates: Partial<Omit<import('@/lib/store').IntakeEntry, 'id'>>) => Promise<void>
+  onSave: (
+    id: string,
+    updates: Partial<Omit<import('@/lib/store').IntakeEntry, 'id'>>
+  ) => Promise<void>
   onDismiss: () => void
 }) {
   const [amount, setAmount] = useState<number | null>(entry?.amount ?? null)
@@ -810,7 +803,6 @@ function EditDoseSheet({
   const [note, setNote] = useState(entry?.note ?? '')
   const [saving, setSaving] = useState(false)
 
-  // Sync state when entry changes
   useEffect(() => {
     if (entry) {
       setAmount(entry.amount)
@@ -846,7 +838,13 @@ function EditDoseSheet({
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
             onClick={onDismiss}
-            style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 400, backdropFilter: 'blur(2px)' }}
+            style={{
+              position: 'fixed',
+              inset: 0,
+              backgroundColor: 'rgba(0,0,0,0.6)',
+              zIndex: 400,
+              backdropFilter: 'blur(2px)',
+            }}
           />
           <motion.div
             key="edit-sheet"
@@ -855,74 +853,232 @@ function EditDoseSheet({
             exit={{ y: '100%' }}
             transition={{ type: 'spring', stiffness: 380, damping: 38 }}
             style={{
-              position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 401,
-              backgroundColor: 'var(--surface)', borderRadius: '24px 24px 0 0',
-              padding: '12px 20px 40px', maxHeight: '80vh', overflowY: 'auto',
+              position: 'fixed',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              zIndex: 401,
+              backgroundColor: 'var(--surface)',
+              borderRadius: '24px 24px 0 0',
+              padding: '12px 20px 40px',
+              maxHeight: '80vh',
+              overflowY: 'auto',
             }}
           >
-            <div style={{ width: 36, height: 4, backgroundColor: 'var(--border)', borderRadius: 2, margin: '0 auto 20px' }} />
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-              <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Edit dose</h2>
-              <button onClick={onDismiss} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: 22, cursor: 'pointer', padding: 0 }}>×</button>
+            <div
+              style={{
+                width: 36,
+                height: 4,
+                backgroundColor: 'var(--border)',
+                borderRadius: 2,
+                margin: '0 auto 20px',
+              }}
+            />
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: 20,
+              }}
+            >
+              <h2
+                style={{ fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}
+              >
+                Edit dose
+              </h2>
+              <button
+                onClick={onDismiss}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--text-secondary)',
+                  fontSize: 22,
+                  cursor: 'pointer',
+                  padding: 0,
+                }}
+              >
+                ×
+              </button>
             </div>
 
-            {/* Amount */}
             <div style={{ marginBottom: 16 }}>
-              <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '0 0 8px 0', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Amount</p>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 8 }}>
-                {presets.map(p => {
+              <p
+                style={{
+                  fontSize: 12,
+                  color: 'var(--text-secondary)',
+                  margin: '0 0 8px 0',
+                  fontWeight: 600,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                }}
+              >
+                Amount
+              </p>
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(3, 1fr)',
+                  gap: 8,
+                  marginBottom: 8,
+                }}
+              >
+                {presets.map((p) => {
                   const sel = !useCustom && amount === p
                   return (
-                    <button key={p} onClick={() => { setAmount(p); setUseCustom(false) }}
-                      style={{ height: 48, borderRadius: 12, fontSize: 16, fontWeight: sel ? 700 : 500, cursor: 'pointer',
-                        backgroundColor: sel ? 'var(--primary)' : 'var(--bg)', color: sel ? 'var(--bg)' : 'var(--text-primary)',
-                        border: `1.5px solid ${sel ? 'var(--primary)' : 'var(--border)'}`, transition: 'all 0.12s' }}>
+                    <button
+                      key={p}
+                      onClick={() => {
+                        setAmount(p)
+                        setUseCustom(false)
+                      }}
+                      style={{
+                        height: 48,
+                        borderRadius: 12,
+                        fontSize: 16,
+                        fontWeight: sel ? 700 : 500,
+                        cursor: 'pointer',
+                        backgroundColor: sel ? 'var(--primary)' : 'var(--bg)',
+                        color: sel ? 'var(--bg)' : 'var(--text-primary)',
+                        border: `1.5px solid ${sel ? 'var(--primary)' : 'var(--border)'}`,
+                        transition: 'all 0.12s',
+                      }}
+                    >
                       {p}g
                     </button>
                   )
                 })}
               </div>
-              <button onClick={() => { setUseCustom(true); setAmount(null) }}
-                style={{ width: '100%', height: 44, borderRadius: 12, fontSize: 14, cursor: 'pointer',
-                  backgroundColor: useCustom ? 'rgba(232,168,124,0.1)' : 'var(--bg)', color: useCustom ? 'var(--primary)' : 'var(--text-secondary)',
-                  border: `1px solid ${useCustom ? 'var(--primary)' : 'var(--border)'}`, fontWeight: useCustom ? 600 : 400 }}>
+              <button
+                onClick={() => {
+                  setUseCustom(true)
+                  setAmount(null)
+                }}
+                style={{
+                  width: '100%',
+                  height: 44,
+                  borderRadius: 12,
+                  fontSize: 14,
+                  cursor: 'pointer',
+                  backgroundColor: useCustom ? 'rgba(232,168,124,0.1)' : 'var(--bg)',
+                  color: useCustom ? 'var(--primary)' : 'var(--text-secondary)',
+                  border: `1px solid ${useCustom ? 'var(--primary)' : 'var(--border)'}`,
+                  fontWeight: useCustom ? 600 : 400,
+                }}
+              >
                 Custom amount
               </button>
               {useCustom && (
-                <input type="number" step="0.1" min="0" placeholder="e.g. 2.5" value={customAmount}
-                  onChange={e => setCustomAmount(e.target.value)} autoFocus
-                  style={{ marginTop: 8, width: '100%', height: 44, padding: '0 12px', borderRadius: 12, fontSize: 15, boxSizing: 'border-box',
-                    backgroundColor: 'var(--bg)', color: 'var(--text-primary)', border: '1px solid var(--primary)' }} />
+                <input
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  placeholder="e.g. 2.5"
+                  value={customAmount}
+                  onChange={(e) => setCustomAmount(e.target.value)}
+                  autoFocus
+                  style={{
+                    marginTop: 8,
+                    width: '100%',
+                    height: 44,
+                    padding: '0 12px',
+                    borderRadius: 12,
+                    fontSize: 15,
+                    boxSizing: 'border-box',
+                    backgroundColor: 'var(--bg)',
+                    color: 'var(--text-primary)',
+                    border: '1px solid var(--primary)',
+                    outline: 'none',
+                  }}
+                />
               )}
             </div>
 
-            {/* Mood */}
             <div style={{ marginBottom: 16 }}>
-              <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '0 0 8px 0', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Mood</p>
+              <p
+                style={{
+                  fontSize: 12,
+                  color: 'var(--text-secondary)',
+                  margin: '0 0 8px 0',
+                  fontWeight: 600,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                }}
+              >
+                Mood
+              </p>
               <div style={{ display: 'flex', gap: 8 }}>
                 {EDIT_MOODS.map(({ value, emoji }) => (
-                  <button key={value} onClick={() => setMood(mood === value ? null : value)}
-                    style={{ flex: 1, height: 44, borderRadius: 12, fontSize: 20, cursor: 'pointer',
+                  <button
+                    key={value}
+                    onClick={() => setMood(mood === value ? null : value)}
+                    style={{
+                      flex: 1,
+                      height: 44,
+                      borderRadius: 12,
+                      fontSize: 20,
+                      cursor: 'pointer',
                       backgroundColor: mood === value ? 'rgba(232,168,124,0.15)' : 'var(--bg)',
-                      border: `1px solid ${mood === value ? 'var(--primary)' : 'var(--border)'}` }}>
+                      border: `1px solid ${mood === value ? 'var(--primary)' : 'var(--border)'}`,
+                    }}
+                  >
                     {emoji}
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Note */}
             <div style={{ marginBottom: 20 }}>
-              <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '0 0 8px 0', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Note</p>
-              <textarea value={note} onChange={e => setNote(e.target.value)} rows={2} placeholder="Optional note"
-                style={{ width: '100%', padding: '10px 12px', borderRadius: 12, fontSize: 14, resize: 'none', outline: 'none', boxSizing: 'border-box',
-                  backgroundColor: 'var(--bg)', color: 'var(--text-primary)', border: '1px solid var(--border)', fontFamily: 'inherit', lineHeight: 1.5 }} />
+              <p
+                style={{
+                  fontSize: 12,
+                  color: 'var(--text-secondary)',
+                  margin: '0 0 8px 0',
+                  fontWeight: 600,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                }}
+              >
+                Note
+              </p>
+              <textarea
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                rows={2}
+                placeholder="Optional note"
+                style={{
+                  width: '100%',
+                  padding: '10px 12px',
+                  borderRadius: 12,
+                  fontSize: 14,
+                  resize: 'none',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                  backgroundColor: 'var(--bg)',
+                  color: 'var(--text-primary)',
+                  border: '1px solid var(--border)',
+                  fontFamily: 'inherit',
+                  lineHeight: 1.5,
+                }}
+              />
             </div>
 
-            <button onClick={handleSave} disabled={finalAmount <= 0 || saving}
-              style={{ width: '100%', height: 52, borderRadius: 16, fontWeight: 700, fontSize: 16, border: 'none', cursor: finalAmount > 0 ? 'pointer' : 'default',
-                backgroundColor: finalAmount > 0 ? 'var(--primary)' : 'var(--surface-elevated)', color: finalAmount > 0 ? 'var(--bg)' : 'var(--text-secondary)',
-                opacity: saving ? 0.7 : 1 }}>
+            <button
+              onClick={handleSave}
+              disabled={finalAmount <= 0 || saving}
+              style={{
+                width: '100%',
+                height: 52,
+                borderRadius: 16,
+                fontWeight: 700,
+                fontSize: 16,
+                border: 'none',
+                cursor: finalAmount > 0 ? 'pointer' : 'default',
+                backgroundColor: finalAmount > 0 ? 'var(--primary)' : 'var(--surface-elevated)',
+                color: finalAmount > 0 ? 'var(--bg)' : 'var(--text-secondary)',
+                opacity: saving ? 0.7 : 1,
+              }}
+            >
               {saving ? 'Saving...' : 'Save changes'}
             </button>
           </motion.div>
