@@ -7,6 +7,7 @@ import { useAppStore, TaperPlan } from '@/lib/store'
 import { useFirestore } from '@/hooks/useFirestore'
 import { useNotifications } from '@/hooks/useNotifications'
 import { formatGrams, getDailyTargetForDate, getTodayKey, dateToKey } from '@/lib/utils'
+import { TaperTrajectoryChart } from '@/components/TaperTrajectoryChart'
 
 export default function PlanPage() {
   const router = useRouter()
@@ -448,6 +449,9 @@ export default function PlanPage() {
                 )}
               </div>
             </div>
+
+            {/* Taper trajectory chart — only after plan exists */}
+            {taperPlan && <TaperTrajectoryChart plan={{ ...taperPlan, startAmount, targetAmount, weeksToTarget }} />}
 
             {/* Reminders */}
             {permission !== 'unsupported' && (
