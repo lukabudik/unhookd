@@ -425,7 +425,12 @@ export function useNotifications() {
 
   const sendNotification = useCallback(
     (title: string, body: string, tag = 'unhookd-reminder', url = '/') => {
-      if (typeof window === 'undefined' || Notification.permission !== 'granted') return
+      if (
+        typeof window === 'undefined' ||
+        !('Notification' in window) ||
+        Notification.permission !== 'granted'
+      )
+        return
       if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
         navigator.serviceWorker.controller.postMessage({
           type: 'SHOW_NOTIFICATION',
@@ -442,7 +447,12 @@ export function useNotifications() {
 
   // App-open proactive checks: re-engagement, hold ending, streak milestone
   useEffect(() => {
-    if (typeof window === 'undefined' || Notification.permission !== 'granted') return
+    if (
+      typeof window === 'undefined' ||
+      !('Notification' in window) ||
+      Notification.permission !== 'granted'
+    )
+      return
 
     const plan = getLocalPlan()
     if (!plan) return
