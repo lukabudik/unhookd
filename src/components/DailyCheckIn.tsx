@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { Moon, BrainCircuit, Activity, Stethoscope, PersonStanding, Sofa } from 'lucide-react'
 import { getTodayKey } from '@/lib/utils'
 
 type CheckInMood = 'awful' | 'rough' | 'okay' | 'good' | 'great'
@@ -30,11 +31,12 @@ const MOODS: { value: CheckInMood; emoji: string; label: string; color: string }
   { value: 'great', emoji: '😊', label: 'Great', color: '#5bc4a0' },
 ]
 
-const SYMPTOMS: { key: keyof SymptomData; emoji: string; label: string }[] = [
-  { key: 'sleep', emoji: '😴', label: 'Sleep' },
-  { key: 'anxiety', emoji: '😰', label: 'Anxiety' },
-  { key: 'restlessness', emoji: '🦵', label: 'Restlessness' },
-  { key: 'gi', emoji: '🤢', label: 'Gut/GI' },
+type SymptomIconComponent = React.ComponentType<{ size?: number; color?: string; strokeWidth?: number }>
+const SYMPTOMS: { key: keyof SymptomData; Icon: SymptomIconComponent; label: string }[] = [
+  { key: 'sleep', Icon: Moon, label: 'Sleep' },
+  { key: 'anxiety', Icon: BrainCircuit, label: 'Anxiety' },
+  { key: 'restlessness', Icon: Activity, label: 'Restlessness' },
+  { key: 'gi', Icon: Stethoscope, label: 'Gut/GI' },
 ]
 
 const SYMPTOM_LEVELS: { value: SymptomLevel; label: string; color: string }[] = [
@@ -133,11 +135,11 @@ export function DailyCheckIn() {
               </p>
             )}
             {(saved.symptoms && Object.keys(saved.symptoms).length > 0 || saved.moved !== undefined) && (
-              <p style={{ margin: '3px 0 0 0', fontSize: 11, color: 'var(--text-secondary)' }}>
-                {saved.moved === true && '🏃 moved · '}
-                {saved.moved === false && '🛋️ rested · '}
+              <p style={{ margin: '3px 0 0 0', fontSize: 11, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                {saved.moved === true && <><PersonStanding size={11} strokeWidth={2} /> moved · </>}
+                {saved.moved === false && <><Sofa size={11} strokeWidth={2} /> rested · </>}
                 {saved.symptoms && Object.keys(saved.symptoms).length > 0 &&
-                  Object.values(saved.symptoms).every(v => v === 'fine') ? 'no symptoms' : 'symptoms tracked'
+                  (Object.values(saved.symptoms).every(v => v === 'fine') ? 'no symptoms' : 'symptoms tracked')
                 }
               </p>
             )}
@@ -242,7 +244,10 @@ export function DailyCheckIn() {
                       transition: 'all 0.15s',
                     }}
                   >
-                    {val ? '✓ Yes' : '✕ No'}
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center' }}>
+                      {val ? <PersonStanding size={14} strokeWidth={2} /> : <Sofa size={14} strokeWidth={2} />}
+                      {val ? 'Yes' : 'No'}
+                    </span>
                   </button>
                 ))}
               </div>
@@ -274,9 +279,11 @@ export function DailyCheckIn() {
                   style={{ overflow: 'hidden', marginBottom: 10 }}
                 >
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    {SYMPTOMS.map(({ key, emoji, label }) => (
+                    {SYMPTOMS.map(({ key, Icon, label }) => (
                       <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span style={{ fontSize: 18, width: 24, flexShrink: 0 }}>{emoji}</span>
+                        <div style={{ width: 24, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <Icon size={16} color="var(--text-secondary)" strokeWidth={1.75} />
+                        </div>
                         <span style={{ fontSize: 13, color: 'var(--text-secondary)', width: 90, flexShrink: 0 }}>{label}</span>
                         <div style={{ display: 'flex', gap: 6, flex: 1 }}>
                           {SYMPTOM_LEVELS.map(({ value, label: lvlLabel, color }) => {

@@ -13,7 +13,7 @@ export type TaperPhase =
 
 export interface PhaseInfo {
   phase: TaperPhase
-  emoji: string
+  icon: string // Lucide icon name
   title: string
   body: string
   color: string
@@ -23,49 +23,49 @@ export interface PhaseInfo {
 
 const PHASE_CONTENT: Record<TaperPhase, Omit<PhaseInfo, 'phase' | 'isPostZero' | 'daysPostZero'>> = {
   'taper-early': {
-    emoji: '🌱',
+    icon: 'Sprout',
     color: 'var(--primary)',
     title: 'The beginning is the hardest part',
     body: 'Your body is adjusting to less kratom. Any discomfort you feel is the physical dependence loosening its grip — it means the process is working. A slow, consistent taper minimizes symptoms. There is no prize for going faster.',
   },
   'taper-mid': {
-    emoji: '⚡',
+    icon: 'Zap',
     color: 'var(--primary)',
     title: 'Building real momentum',
     body: "You're in the heart of the taper. Your system is gradually recalibrating. Some days feel easier than expected; some harder. Both are normal. Consistency matters more than perfection — every day near or under target is your body gaining ground.",
   },
   'taper-late': {
-    emoji: '🏔️',
+    icon: 'Mountain',
     color: 'var(--primary)',
     title: 'The final approach',
     body: 'As doses get lower, some people notice a paradoxical increase in symptoms — this is normal. Your opioid receptors are becoming more sensitive as dependence decreases. The discomfort here is the dependence losing its last grip. Stay with the plan.',
   },
   'taper-final': {
-    emoji: '🔭',
+    icon: 'Target',
     color: '#7fb069',
     title: 'Almost there',
     body: "You're approaching zero. The psychological challenge often intensifies here — the mind resists the idea of stopping more than the body does. The fear of how you'll feel without kratom is almost always worse than the reality. You've already done the hardest work.",
   },
   'post-zero-acute': {
-    emoji: '🌊',
+    icon: 'Waves',
     color: '#e8a87c',
     title: 'Acute phase — days 1–10',
     body: 'Your body is completing the transition. Restlessness, broken sleep, anxiety, and body aches are all normal right now. Symptoms peak around days 3–5 for most people and improve significantly by day 10. Hydration, magnesium, and movement help more than you might expect. This phase is finite.',
   },
   'post-zero-sub-acute': {
-    emoji: '🌤️',
+    icon: 'CloudSun',
     color: '#e8a87c',
     title: 'Sub-acute phase — weeks 2–6',
     body: 'Physical symptoms have mostly resolved, but this phase can feel hard in new ways. Low motivation, flat mood, and broken sleep are common — your dopamine system is recalibrating after sustained opioid input. This is neurochemical, not a character flaw. Exercise is your most powerful tool right now.',
   },
   'post-zero-paws': {
-    emoji: '🌅',
+    icon: 'Sunrise',
     color: '#7fb069',
     title: 'Post-acute recovery',
     body: "You're in PAWS (post-acute withdrawal syndrome). Most people feel noticeably better around weeks 6–8, with continued improvement through months 3–6. Cravings at this stage are triggered by stress and emotion, not physical need. Your brain is still rewiring — the fog will lift.",
   },
   'maintenance': {
-    emoji: '⚓',
+    icon: 'Anchor',
     color: 'var(--success)',
     title: 'Holding your maintenance dose',
     body: "You've reached your target. Staying consistent while your system stabilizes is the goal. When you're ready to reduce further, update your plan.",
@@ -104,7 +104,7 @@ type SymptomKey = 'sleep' | 'anxiety' | 'restlessness' | 'gi' | 'mood' | 'energy
 export interface Supplement {
   id: string
   name: string
-  emoji: string
+  icon: string
   dose: string
   timing: string
   forSymptoms: SymptomKey[]
@@ -118,7 +118,7 @@ export const SUPPLEMENTS: Supplement[] = [
   {
     id: 'magnesium',
     name: 'Magnesium glycinate',
-    emoji: '🪨',
+    icon: 'Pill',
     dose: '400–500mg',
     timing: 'Evening before bed',
     forSymptoms: ['sleep', 'restlessness', 'anxiety'],
@@ -129,7 +129,7 @@ export const SUPPLEMENTS: Supplement[] = [
   {
     id: 'ltheanine',
     name: 'L-theanine',
-    emoji: '🍵',
+    icon: 'Leaf',
     dose: '200–400mg',
     timing: 'Morning and/or evening',
     forSymptoms: ['anxiety', 'sleep'],
@@ -140,7 +140,7 @@ export const SUPPLEMENTS: Supplement[] = [
   {
     id: 'melatonin',
     name: 'Melatonin (low dose)',
-    emoji: '🌙',
+    icon: 'Moon',
     dose: '0.5–1mg',
     timing: '30–60 min before bed',
     forSymptoms: ['sleep'],
@@ -152,7 +152,7 @@ export const SUPPLEMENTS: Supplement[] = [
   {
     id: 'nac',
     name: 'NAC (N-acetyl cysteine)',
-    emoji: '🔬',
+    icon: 'FlaskConical',
     dose: '600–1200mg twice daily',
     timing: 'Morning and evening with food',
     forSymptoms: ['cravings', 'mood', 'energy'],
@@ -163,7 +163,7 @@ export const SUPPLEMENTS: Supplement[] = [
   {
     id: 'blackseedoil',
     name: 'Black seed oil',
-    emoji: '🌿',
+    icon: 'Leaf',
     dose: '1 tsp 2–3× daily',
     timing: 'With meals',
     forSymptoms: ['cravings', 'anxiety', 'gi'],
@@ -174,7 +174,7 @@ export const SUPPLEMENTS: Supplement[] = [
   {
     id: 'ltyrosine',
     name: 'L-tyrosine',
-    emoji: '⚡',
+    icon: 'Zap',
     dose: '500–1500mg',
     timing: 'Morning on empty stomach',
     forSymptoms: ['mood', 'energy', 'cravings'],
@@ -186,7 +186,7 @@ export const SUPPLEMENTS: Supplement[] = [
   {
     id: 'omega3',
     name: 'Omega-3 / Fish oil',
-    emoji: '🐟',
+    icon: 'Fish',
     dose: '2–4g EPA+DHA daily',
     timing: 'With food',
     forSymptoms: ['mood', 'energy'],
@@ -197,7 +197,7 @@ export const SUPPLEMENTS: Supplement[] = [
   {
     id: 'vitaminc',
     name: 'Vitamin C (high dose)',
-    emoji: '🍊',
+    icon: 'Sun',
     dose: '1–3g in divided doses',
     timing: 'Split through the day with food',
     forSymptoms: ['anxiety', 'energy', 'cravings'],
@@ -209,7 +209,7 @@ export const SUPPLEMENTS: Supplement[] = [
   {
     id: 'bcomplex',
     name: 'B-complex',
-    emoji: '💛',
+    icon: 'Pill',
     dose: 'Standard B-complex tablet',
     timing: 'Morning with food',
     forSymptoms: ['energy', 'mood'],
@@ -220,7 +220,7 @@ export const SUPPLEMENTS: Supplement[] = [
   {
     id: 'cbd',
     name: 'CBD',
-    emoji: '🌱',
+    icon: 'Sprout',
     dose: '25–50mg for sleep · 15–25mg for anxiety',
     timing: 'As needed; larger dose 1hr before bed',
     forSymptoms: ['anxiety', 'sleep', 'restlessness'],
@@ -232,7 +232,7 @@ export const SUPPLEMENTS: Supplement[] = [
   {
     id: 'ashwagandha',
     name: 'Ashwagandha (KSM-66)',
-    emoji: '🌾',
+    icon: 'Sprout',
     dose: '300–600mg',
     timing: 'Morning, or split morning/evening',
     forSymptoms: ['anxiety', 'energy', 'mood'],

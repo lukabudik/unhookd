@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { Smartphone } from 'lucide-react'
 
 const DISMISSED_KEY = 'unhookd_install_dismissed'
 const DISMISS_DAYS = 14
@@ -96,11 +97,10 @@ export function InstallBanner() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: 22,
                 flexShrink: 0,
               }}
             >
-              🔗
+              <Smartphone size={22} color="var(--bg)" strokeWidth={1.75} />
             </div>
 
             <div style={{ flex: 1, minWidth: 0 }}>

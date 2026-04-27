@@ -182,15 +182,13 @@ src/
 
 ## Data & Privacy
 
-Your data is yours. By default:
+**On-device first.** All logs are stored in your browser's `localStorage`. No name, email address, or personally identifying information is ever collected. You are completely anonymous — the app assigns a random ID and knows nothing else about you.
 
-- Everything is stored in your browser's `localStorage`
-- Nothing is sent to any server
-- No analytics, no tracking, no account required
+**Anonymous usage data.** When Firebase is configured, anonymised usage patterns sync to Firestore. This data helps us understand what actually supports kratom recovery — dose reduction patterns, craving resistance rates, symptom trends — but it cannot be linked back to any individual. Think of it as contributing to an anonymous dataset that makes the guidance better for everyone going through this.
 
-If you configure Firebase, data syncs to your own Firestore database under anonymous auth. Each user's data is isolated by their UID via Firestore security rules.
+**Your exports, your control.** You can download all your data as JSON at any time from Settings, and wipe everything with a single tap.
 
-You can export all your data as JSON at any time from Settings.
+Each user's Firestore data is isolated by their anonymous UID via security rules — no other user or admin can read it.
 
 ---
 

@@ -17,6 +17,7 @@ import { SymptomSuggestionsCard } from '@/components/SymptomSuggestionsCard'
 import { QuickLogSheet } from '@/components/QuickLogSheet'
 import { DailyCheckIn } from '@/components/DailyCheckIn'
 import { format } from 'date-fns'
+import { Bell, Shield, Waves, Flame } from 'lucide-react'
 
 function MoodEmoji({ mood }: { mood?: string }) {
   if (mood === 'rough') return <span>😣</span>
@@ -186,7 +187,10 @@ export default function HomePage() {
               boxShadow: '0 8px 32px rgba(127,176,105,0.35)',
             }}
           >
-            🛡️ That took strength. Well done.
+            <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Shield size={16} strokeWidth={2} />
+              That took strength. Well done.
+            </span>
           </motion.div>
         )}
       </AnimatePresence>
@@ -315,7 +319,7 @@ export default function HomePage() {
                   alignItems: 'flex-start',
                 }}
               >
-                <span style={{ fontSize: 22, flexShrink: 0 }}>🔔</span>
+                <Bell size={22} color="var(--primary)" strokeWidth={1.75} style={{ flexShrink: 0, marginTop: 2 }} />
                 <div style={{ flex: 1 }}>
                   <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 4px 0' }}>
                     Enable reminders?
@@ -449,7 +453,7 @@ export default function HomePage() {
               alignItems: 'flex-start',
             }}
           >
-            <span style={{ fontSize: 20, flexShrink: 0 }}>🌊</span>
+            <Waves size={20} color="#e05a5a" strokeWidth={1.75} style={{ flexShrink: 0, marginTop: 2 }} />
             <div>
               <p style={{ margin: '0 0 2px 0', fontSize: 14, fontWeight: 600, color: '#e05a5a' }}>
                 Over today&apos;s goal — that&apos;s okay.
@@ -498,8 +502,8 @@ export default function HomePage() {
                 textAlign: 'center',
               }}
             >
-              <div style={{ fontSize: 26, fontWeight: 700, color: 'var(--success)' }}>
-                {streak}🔥
+              <div style={{ fontSize: 26, fontWeight: 700, color: 'var(--success)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+                {streak}<Flame size={22} color="var(--success)" strokeWidth={1.75} />
               </div>
               <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 2 }}>
                 day streak
@@ -540,7 +544,7 @@ export default function HomePage() {
               gap: 8,
             }}
           >
-            <span style={{ fontSize: 16 }}>🛡️</span>
+            <Shield size={16} color="var(--success)" strokeWidth={1.75} />
             <span style={{ fontSize: 13, color: 'var(--success)', fontWeight: 600 }}>
               {todayResistances} craving{todayResistances !== 1 ? 's' : ''} resisted today
             </span>
@@ -745,7 +749,7 @@ export default function HomePage() {
               gap: 8,
             }}
           >
-            <span style={{ fontSize: 18 }}>🌊</span>
+            <Waves size={18} color="var(--text-secondary)" strokeWidth={1.75} />
             <span>Feeling a craving? Breathe through it →</span>
           </button>
         )}

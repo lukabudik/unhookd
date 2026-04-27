@@ -3,35 +3,36 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
+import { Heart, Lock, ClipboardList, MapPin, Waves } from 'lucide-react'
 
 const ONBOARDED_KEY = 'unhookd_onboarded'
 
 const SLIDES = [
   {
-    emoji: null,
+    SlideIcon: Heart,
     title: "You're not alone in this.",
     body: "Unhookd is a private taper companion for people reducing or quitting kratom. It tracks your doses, supports you through cravings, and helps you understand how your body is responding — one day at a time.",
     accent: 'var(--primary)',
   },
   {
-    emoji: '🔒',
-    title: 'Your data belongs to you.',
-    body: 'Everything you log stays on your device. No account, no tracking, no one can see your data — not even us.\n\nOptional cloud backup is available if you want to sync across devices, but it\'s off by default.',
+    SlideIcon: Lock,
+    title: 'Private by design.',
+    body: 'Your logs are stored on this device. No name, email, or identifying information is ever collected — you\'re completely anonymous.\n\nAnonymous usage patterns are shared to help us understand what actually supports kratom recovery. Nothing can ever be traced back to you.',
     accent: 'var(--success)',
   },
   {
-    emoji: null,
+    SlideIcon: null,
     title: 'How it works.',
     body: null,
     accent: 'var(--primary)',
     features: [
-      { icon: '📋', title: 'Set a plan', detail: 'Tell the app your starting dose and goal — it calculates your daily target automatically.' },
-      { icon: '📍', title: 'Log daily', detail: 'Takes 5 seconds. The app tracks your progress, streak, and patterns over time.' },
-      { icon: '🌊', title: 'Use SOS when it\'s hard', detail: 'Guided breathing and craving support when you need it most.' },
+      { FeatureIcon: ClipboardList, title: 'Set a plan', detail: 'Tell the app your starting dose and goal — it calculates your daily target automatically.' },
+      { FeatureIcon: MapPin, title: 'Log daily', detail: 'Takes 5 seconds. The app tracks your progress, streak, and patterns over time.' },
+      { FeatureIcon: Waves, title: 'Use SOS when it\'s hard', detail: 'Guided breathing and craving support when you need it most.' },
     ],
   },
   {
-    emoji: null,
+    SlideIcon: null,
     title: 'This is genuinely hard.',
     body: "Kratom withdrawal is real. There will be rough days. The app won't judge you for logging an over-target day, missing a day, or needing to hold your dose for a week.\n\nHonesty with yourself is the whole point.",
     accent: '#e8a87c',
@@ -126,28 +127,21 @@ export function Onboarding() {
                 exit={{ x: direction * -48, opacity: 0 }}
                 transition={{ duration: 0.25, ease: 'easeOut' }}
               >
-                {current.emoji && (
-                  <div style={{ fontSize: 56, marginBottom: 24, lineHeight: 1 }}>
-                    {current.emoji}
-                  </div>
-                )}
-
-                {!current.emoji && slide === 0 && (
+                {current.SlideIcon && (
                   <div style={{ marginBottom: 24 }}>
                     <div
                       style={{
                         width: 64,
                         height: 64,
                         borderRadius: 18,
-                        backgroundColor: 'rgba(232,168,124,0.15)',
-                        border: '1.5px solid rgba(232,168,124,0.3)',
+                        backgroundColor: `${current.accent}18`,
+                        border: `1.5px solid ${current.accent}40`,
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        fontSize: 32,
                       }}
                     >
-                      🔗
+                      <current.SlideIcon size={28} color={current.accent} strokeWidth={1.75} />
                     </div>
                   </div>
                 )}
@@ -193,11 +187,10 @@ export function Onboarding() {
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            fontSize: 22,
                             flexShrink: 0,
                           }}
                         >
-                          {f.icon}
+                          <f.FeatureIcon size={20} color="var(--primary)" strokeWidth={1.75} />
                         </div>
                         <div>
                           <p style={{ margin: '0 0 3px 0', fontSize: 15, fontWeight: 700, color: 'var(--text-primary)' }}>

@@ -2,10 +2,17 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import * as LucideIcons from 'lucide-react'
 import { PhaseInfo } from '@/lib/phases'
 import { getTodayKey } from '@/lib/utils'
 
 const DISMISS_KEY = 'unhookd_phase_dismissed'
+
+function PhaseIcon({ name, color }: { name: string; color: string }) {
+  const Icon = (LucideIcons as Record<string, LucideIcons.LucideIcon>)[name]
+  if (!Icon) return null
+  return <Icon size={22} color={color} strokeWidth={1.75} />
+}
 
 export function PhaseGuidanceCard({ phaseInfo }: { phaseInfo: PhaseInfo }) {
   const [visible, setVisible] = useState(false)
@@ -48,7 +55,9 @@ export function PhaseGuidanceCard({ phaseInfo }: { phaseInfo: PhaseInfo }) {
               alignItems: 'flex-start',
             }}
           >
-            <span style={{ fontSize: 22, flexShrink: 0, lineHeight: 1.3 }}>{phaseInfo.emoji}</span>
+            <div style={{ flexShrink: 0, marginTop: 1 }}>
+              <PhaseIcon name={phaseInfo.icon} color={phaseInfo.color} />
+            </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <p style={{ margin: '0 0 3px 0', fontSize: 13, fontWeight: 700, color: phaseInfo.color }}>
                 {phaseInfo.title}

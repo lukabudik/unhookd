@@ -8,6 +8,7 @@ import { IntakeEntry } from '@/lib/store'
 import { IntakeChart } from '@/components/IntakeChart'
 import { getPastDates, dateToKey, formatGrams, getDailyTargetForDate, getPresets } from '@/lib/utils'
 import { format } from 'date-fns'
+import { Flame } from 'lucide-react'
 
 interface CheckInData {
   mood: 'awful' | 'rough' | 'okay' | 'good' | 'great'
@@ -151,8 +152,8 @@ export default function HistoryPage() {
               gap: 16,
             }}
           >
-            <div style={{ width: 56, height: 56, borderRadius: 16, backgroundColor: 'rgba(127,176,105,0.15)', border: '1px solid rgba(127,176,105,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, flexShrink: 0 }}>
-              🔥
+            <div style={{ width: 56, height: 56, borderRadius: 16, backgroundColor: 'rgba(127,176,105,0.15)', border: '1px solid rgba(127,176,105,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <Flame size={28} color="var(--success)" strokeWidth={1.75} />
             </div>
             <div>
               <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--success)', lineHeight: 1 }}>

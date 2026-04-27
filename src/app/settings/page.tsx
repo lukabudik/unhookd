@@ -532,7 +532,7 @@ export default function SettingsPage() {
               fontStyle: 'italic',
             }}
           >
-            Your data lives on your device. You&apos;re in control.
+            Your logs are stored on this device. Anonymous usage data — no name, email, or identifying information — is shared to help understand what supports kratom recovery.
           </p>
         </motion.div>
       </div>

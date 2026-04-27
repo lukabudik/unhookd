@@ -2,7 +2,14 @@
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import * as LucideIcons from 'lucide-react'
 import { Supplement } from '@/lib/phases'
+
+function SupplementIcon({ name }: { name: string }) {
+  const Icon = (LucideIcons as Record<string, LucideIcons.LucideIcon>)[name]
+  if (!Icon) return null
+  return <Icon size={18} color="var(--primary)" strokeWidth={1.75} />
+}
 
 export function SymptomSuggestionsCard({ supplements }: { supplements: Supplement[] }) {
   const [expandedId, setExpandedId] = useState<string | null>(null)
@@ -23,9 +30,12 @@ export function SymptomSuggestionsCard({ supplements }: { supplements: Supplemen
       }}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-        <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>
-          💊 Supports for your recent symptoms
-        </p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <LucideIcons.Pill size={16} color="var(--text-secondary)" strokeWidth={1.75} />
+          <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>
+            Supports for your recent symptoms
+          </p>
+        </div>
         <button
           onClick={() => setDismissed(true)}
           style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: 18, padding: 0, lineHeight: 1, opacity: 0.6 }}
@@ -52,7 +62,9 @@ export function SymptomSuggestionsCard({ supplements }: { supplements: Supplemen
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 }}>
-                  <span style={{ fontSize: 20, flexShrink: 0 }}>{s.emoji}</span>
+                  <div style={{ flexShrink: 0, width: 20, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <SupplementIcon name={s.icon} />
+                  </div>
                   <div style={{ minWidth: 0 }}>
                     <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>
                       {s.name}
@@ -62,9 +74,12 @@ export function SymptomSuggestionsCard({ supplements }: { supplements: Supplemen
                     </p>
                   </div>
                 </div>
-                <span style={{ fontSize: 11, color: 'var(--text-secondary)', opacity: 0.5, flexShrink: 0 }}>
-                  {isExpanded ? '▲' : '▼'}
-                </span>
+                <LucideIcons.ChevronDown
+                  size={14}
+                  color="var(--text-secondary)"
+                  strokeWidth={2}
+                  style={{ flexShrink: 0, opacity: 0.5, transform: isExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}
+                />
               </div>
 
               <AnimatePresence>
