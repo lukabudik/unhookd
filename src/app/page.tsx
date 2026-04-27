@@ -141,6 +141,7 @@ export default function HomePage() {
         isOpen={showQuickLog}
         dailyTarget={dailyTarget}
         todayTotal={todayTotal}
+        lastDoseAt={lastDoseEntry ? new Date(lastDoseEntry.timestamp) : null}
         onLog={addIntake}
         onSuccess={() => setShowQuickLog(false)}
         onDismiss={() => setShowQuickLog(false)}

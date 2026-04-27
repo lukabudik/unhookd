@@ -12,6 +12,7 @@ interface QuickLogSheetProps {
   isOpen: boolean
   dailyTarget: number
   todayTotal?: number
+  lastDoseAt?: Date | null
   onLog: (entry: Omit<IntakeEntry, 'id'>) => Promise<void> | void
   onSuccess: () => void
   onDismiss: () => void
@@ -31,7 +32,7 @@ const HALT_OPTIONS = [
   { key: 'T', label: 'Tired', emoji: '😴' },
 ]
 
-export function QuickLogSheet({ isOpen, dailyTarget, todayTotal = 0, onLog, onSuccess, onDismiss }: QuickLogSheetProps) {
+export function QuickLogSheet({ isOpen, dailyTarget, todayTotal = 0, lastDoseAt, onLog, onSuccess, onDismiss }: QuickLogSheetProps) {
   const [selected, setSelected] = useState<number | null>(null)
   const [mood, setMood] = useState<Mood | null>(null)
   const [isLogging, setIsLogging] = useState(false)
@@ -276,6 +277,17 @@ export function QuickLogSheet({ isOpen, dailyTarget, todayTotal = 0, onLog, onSu
                       <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '2px 0 0 0' }}>
                         Target today: {dailyTarget}g
                       </p>
+                      {lastDoseAt && (() => {
+                        const minsAgo = Math.floor((Date.now() - new Date(lastDoseAt).getTime()) / 60000)
+                        if (minsAgo < 120) {
+                          return (
+                            <p style={{ fontSize: 11, color: '#e8a87c', margin: '3px 0 0 0' }}>
+                              ⏱ Last dose {minsAgo < 60 ? `${minsAgo}m` : `${Math.floor(minsAgo / 60)}h ${minsAgo % 60}m`} ago
+                            </p>
+                          )
+                        }
+                        return null
+                      })()}
                     </div>
                     <div style={{ display: 'flex', gap: 6 }}>
                       {MOODS.map(({ value, emoji }) => (
