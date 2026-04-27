@@ -82,7 +82,7 @@ function saveLocalIntakesRaw(dateKey: string, intakes: IntakeEntry[]) {
 
 export default function HistoryPage() {
   const { taperPlan } = useAppStore()
-  const { getHistoryIntakes, addIntake } = useFirestore()
+  const { getHistoryIntakes, addIntake, deleteIntake } = useFirestore()
   const [historyData, setHistoryData] = useState<DayData[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedDay, setSelectedDay] = useState<DayData | null>(null)
@@ -132,11 +132,7 @@ export default function HistoryPage() {
   }
 
   function deleteHistoricalIntake(dayKey: string, id: string) {
-    const existing = loadLocalIntakesRaw(dayKey)
-    saveLocalIntakesRaw(
-      dayKey,
-      existing.filter((e) => e.id !== id)
-    )
+    deleteIntake(id, dayKey)
     refreshSelectedDay(dayKey)
   }
 

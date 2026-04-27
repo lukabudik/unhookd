@@ -34,8 +34,8 @@ function MoodIcon({ mood }: { mood?: string }) {
 }
 
 export default function HomePage() {
-  const { todayIntakes, taperPlan, getTodayTotal, setTodayIntakes } = useAppStore()
-  const { addIntake, updateIntake } = useFirestore()
+  const { todayIntakes, taperPlan, getTodayTotal } = useAppStore()
+  const { addIntake, updateIntake, deleteIntake } = useFirestore()
   const { permission, requestPermission } = useNotifications()
   const [showNotifBanner, setShowNotifBanner] = useState(false)
   const [notifDismissed, setNotifDismissed] = useState(false)
@@ -103,13 +103,6 @@ export default function HomePage() {
     setShowCravingModal(false)
     setShowResistanceToast(true)
     setTimeout(() => setShowResistanceToast(false), 3000)
-  }
-
-  function deleteIntake(id: string) {
-    const updated = todayIntakes.filter((e) => e.id !== id)
-    setTodayIntakes(updated)
-    const todayKey = getTodayKey()
-    localStorage.setItem(`unhookd_intakes_${todayKey}`, JSON.stringify(updated))
   }
 
   const todayTotal = getTodayTotal()
