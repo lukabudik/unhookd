@@ -3,6 +3,7 @@
 import { useEffect } from 'react'
 import { useFirestore } from '@/hooks/useFirestore'
 import { InstallBanner } from '@/components/InstallBanner'
+import { Onboarding } from '@/components/Onboarding'
 
 function FirestoreInitializer() {
   useFirestore()
@@ -23,6 +24,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <>
       <FirestoreInitializer />
       {children}
+      <Onboarding />
       <InstallBanner />
     </>
   )
