@@ -9,6 +9,7 @@ interface Props {
   streak: number
   dayNumber: number
   reasons?: string
+  emergencyContact?: { name: string; phone: string }
   onResisted: () => void
   onDismiss: () => void
 }
@@ -20,7 +21,7 @@ const BREATH_PHASES = [
   { text: '', scale: 1.0, duration: 2000 },
 ]
 
-export function CravingModal({ isOpen, streak, dayNumber, reasons, onResisted, onDismiss }: Props) {
+export function CravingModal({ isOpen, streak, dayNumber, reasons, emergencyContact, onResisted, onDismiss }: Props) {
   const router = useRouter()
   const [phaseIndex, setPhaseIndex] = useState(0)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -210,6 +211,29 @@ export function CravingModal({ isOpen, streak, dayNumber, reasons, onResisted, o
               >
                 I rode it out ✓
               </button>
+              {emergencyContact?.phone && (
+                <a
+                  href={`tel:${emergencyContact.phone}`}
+                  style={{
+                    width: '100%',
+                    height: 44,
+                    borderRadius: 12,
+                    backgroundColor: 'rgba(232,168,124,0.1)',
+                    color: 'var(--primary)',
+                    fontWeight: 600,
+                    fontSize: 14,
+                    border: '1px solid rgba(232,168,124,0.3)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 8,
+                    textDecoration: 'none',
+                  }}
+                >
+                  📞 Call {emergencyContact.name}
+                </a>
+              )}
               <button
                 onClick={handleLogDose}
                 style={{

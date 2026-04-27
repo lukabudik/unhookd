@@ -18,6 +18,8 @@ export default function PlanPage() {
   const [targetAmount, setTargetAmount] = useState(taperPlan?.targetAmount ?? 0)
   const [weeksToTarget, setWeeksToTarget] = useState(taperPlan?.weeksToTarget ?? 12)
   const [reasons, setReasons] = useState(taperPlan?.reasons ?? '')
+  const [contactName, setContactName] = useState(taperPlan?.emergencyContact?.name ?? '')
+  const [contactPhone, setContactPhone] = useState(taperPlan?.emergencyContact?.phone ?? '')
   const [isSaving, setIsSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [isHolding, setIsHolding] = useState(false)
@@ -56,6 +58,8 @@ export default function PlanPage() {
       setTargetAmount(taperPlan.targetAmount)
       setWeeksToTarget(taperPlan.weeksToTarget)
       setReasons(taperPlan.reasons ?? '')
+      setContactName(taperPlan.emergencyContact?.name ?? '')
+      setContactPhone(taperPlan.emergencyContact?.phone ?? '')
     }
   }, [taperPlan])
 
@@ -90,6 +94,9 @@ export default function PlanPage() {
       weeksToTarget,
       currentDailyTarget: 0,
       reasons: reasons.trim() || undefined,
+      emergencyContact: contactName.trim()
+        ? { name: contactName.trim(), phone: contactPhone.trim() }
+        : undefined,
     }
 
     try {
@@ -568,6 +575,71 @@ export default function PlanPage() {
               <p style={{ fontSize: 11, color: 'var(--text-secondary)', margin: '4px 0 0 0', textAlign: 'right' }}>
                 {280 - reasons.length} chars left
               </p>
+            </div>
+
+            {/* Emergency contact */}
+            <div
+              style={{
+                backgroundColor: 'var(--surface)',
+                borderRadius: 20,
+                padding: 20,
+                border: '1px solid var(--border)',
+              }}
+            >
+              <label
+                style={{
+                  display: 'block',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: 'var(--text-secondary)',
+                  marginBottom: 6,
+                  letterSpacing: '0.05em',
+                  textTransform: 'uppercase',
+                }}
+              >
+                My person (optional)
+              </label>
+              <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '0 0 12px 0', lineHeight: 1.5 }}>
+                Someone to call when it gets really hard. Shown as a call button inside the craving SOS.
+              </p>
+              <div style={{ display: 'flex', gap: 10 }}>
+                <input
+                  type="text"
+                  placeholder="Name"
+                  value={contactName}
+                  onChange={(e) => setContactName(e.target.value)}
+                  style={{
+                    flex: 1,
+                    height: 46,
+                    padding: '0 14px',
+                    borderRadius: 12,
+                    border: '1px solid var(--border)',
+                    backgroundColor: 'var(--bg)',
+                    color: 'var(--text-primary)',
+                    fontSize: 14,
+                    fontFamily: 'inherit',
+                    boxSizing: 'border-box',
+                  }}
+                />
+                <input
+                  type="tel"
+                  placeholder="Phone number"
+                  value={contactPhone}
+                  onChange={(e) => setContactPhone(e.target.value)}
+                  style={{
+                    flex: 1.4,
+                    height: 46,
+                    padding: '0 14px',
+                    borderRadius: 12,
+                    border: '1px solid var(--border)',
+                    backgroundColor: 'var(--bg)',
+                    color: 'var(--text-primary)',
+                    fontSize: 14,
+                    fontFamily: 'inherit',
+                    boxSizing: 'border-box',
+                  }}
+                />
+              </div>
             </div>
 
             {/* Hold mode */}

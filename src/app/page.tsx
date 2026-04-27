@@ -156,6 +156,7 @@ export default function HomePage() {
         streak={streak}
         dayNumber={dayNumber}
         reasons={taperPlan?.reasons}
+        emergencyContact={taperPlan?.emergencyContact}
         onResisted={handleResisted}
         onDismiss={() => setShowCravingModal(false)}
       />

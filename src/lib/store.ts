@@ -17,6 +17,7 @@ export interface TaperPlan {
   holdUntil?: string // ISO date — hold ends after this date (inclusive)
   holdStartDate?: string // ISO date — when the hold began
   reasons?: string // personal motivation, shown in craving modal
+  emergencyContact?: { name: string; phone: string }
 }
 
 interface AppStore {
