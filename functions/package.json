@@ -4,7 +4,7 @@
   "description": "Cloud Functions for Unhookd — scheduled push notifications",
   "main": "lib/index.js",
   "engines": {
-    "node": "20"
+    "node": "22"
   },
   "scripts": {
     "build": "tsc",
@@ -15,10 +15,10 @@
   },
   "dependencies": {
     "firebase-admin": "^12.3.0",
-    "firebase-functions": "^6.0.0"
+    "firebase-functions": "^7.2.5"
   },
   "devDependencies": {
-    "@types/node": "^20.0.0",
+    "@types/node": "^22.0.0",
     "typescript": "^5.4.0"
   },
   "private": true
