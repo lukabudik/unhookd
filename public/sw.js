@@ -1,39 +1,6 @@
-// Unified service worker: caching + FCM background push in one file.
-// Having two SWs at the same scope ('/') means only one can be active at a time.
-// Merging them here ensures background push actually fires when the app is closed.
-
-importScripts('https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js')
-importScripts('https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js')
-
-// ── Firebase Cloud Messaging (background push) ─────────────────────────────
-
-firebase.initializeApp({
-  apiKey: 'AIzaSyCFfp9kEqsKPECWdn3lslusNAJ79J5UqjA',
-  authDomain: 'unhookd-5eb77.firebaseapp.com',
-  projectId: 'unhookd-5eb77',
-  storageBucket: 'unhookd-5eb77.firebasestorage.app',
-  messagingSenderId: '502754967063',
-  appId: '1:502754967063:web:f44a0e76a1f0011a802652',
-})
-
-const messaging = firebase.messaging()
-
-messaging.onBackgroundMessage((payload) => {
-  const title = payload.notification?.title || 'Unhookd'
-  const body = payload.notification?.body || 'Time to check in.'
-  const url = payload.data?.url || '/'
-
-  self.registration.showNotification(title, {
-    body,
-    icon: '/icon-192.png',
-    badge: '/icon-192.png',
-    tag: payload.data?.tag || 'unhookd',
-    renotify: true,
-    data: { url },
-  })
-})
-
-// ── Caching ────────────────────────────────────────────────────────────────
+// Service worker: offline caching + notification delivery.
+// FCM push is handled via the standard Web Push 'push' event — no Firebase
+// SDK needed here. importScripts from external CDNs breaks Safari on iOS.
 
 const CACHE_NAME = 'unhookd-v3'
 
@@ -78,8 +45,39 @@ self.addEventListener('fetch', (event) => {
   )
 })
 
-// ── Notification click (deep link) ────────────────────────────────────────
+// FCM background push — standard Web Push API, no Firebase SDK required.
+// FCM payload: { notification: { title, body }, data: { url, tag } }
+self.addEventListener('push', (event) => {
+  let title = 'Unhookd'
+  let body = 'Time to check in.'
+  let url = '/'
+  let tag = 'unhookd-reminder'
 
+  if (event.data) {
+    try {
+      const d = event.data.json()
+      title = d.notification?.title || d.title || title
+      body = d.notification?.body || d.body || body
+      url = d.data?.url || d.url || url
+      tag = d.data?.tag || d.tag || tag
+    } catch {
+      body = event.data.text()
+    }
+  }
+
+  event.waitUntil(
+    self.registration.showNotification(title, {
+      body,
+      icon: '/icon-192.png',
+      badge: '/icon-192.png',
+      tag,
+      renotify: true,
+      data: { url },
+    })
+  )
+})
+
+// Notification click — focus existing tab or open new one
 self.addEventListener('notificationclick', (event) => {
   event.notification.close()
   const url = event.notification.data?.url || '/'
@@ -97,8 +95,7 @@ self.addEventListener('notificationclick', (event) => {
   )
 })
 
-// ── In-app notification trigger (postMessage from useNotifications) ────────
-
+// In-app notification trigger (postMessage from useNotifications hook)
 self.addEventListener('message', (event) => {
   if (event.data?.type === 'SHOW_NOTIFICATION') {
     const { title, body, url, tag } = event.data
