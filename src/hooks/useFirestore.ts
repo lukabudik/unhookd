@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { IntakeEntry, TaperPlan, useAppStore } from '@/lib/store'
 import { getTodayKey, getDailyTargetForDate, dateToKey } from '@/lib/utils'
 import { getOrCreateRecoveryCode } from '@/lib/recovery'
@@ -54,6 +54,9 @@ export function useFirestore() {
   const [firestoreDb, setFirestoreDb] = useState<import('firebase/firestore').Firestore | null>(
     null
   )
+  // Tracks whether we've already completed the initial local load, so we don't
+  // overwrite pending (locally-logged) intakes when Firestore data arrives later
+  const initialLoadDone = useRef(false)
 
   // Initialize Firebase (anonymous auth for security rules) and load recovery code
   useEffect(() => {
@@ -136,7 +139,7 @@ export function useFirestore() {
           )
           const snap = await getDocs(q)
           if (mounted) {
-            const intakes: IntakeEntry[] = snap.docs.map((d) => {
+            const firestoreIntakes: IntakeEntry[] = snap.docs.map((d) => {
               const data = d.data()
               return {
                 id: d.id,
@@ -146,7 +149,32 @@ export function useFirestore() {
                 mood: data.mood,
               }
             })
-            setTodayIntakes(intakes)
+
+            // Merge: keep any locally-logged intakes that were written before Firebase
+            // auth completed (they won't be in Firestore yet, so we preserve them and
+            // write them now to avoid data loss from the race condition)
+            if (initialLoadDone.current) {
+              const firestoreIds = new Set(firestoreIntakes.map((i) => i.id))
+              const pending = useAppStore
+                .getState()
+                .todayIntakes.filter((i) => !firestoreIds.has(i.id))
+              setTodayIntakes([...firestoreIntakes, ...pending])
+
+              // Write the pending local intakes to Firestore now that we're connected
+              if (pending.length > 0 && firestoreDb) {
+                const { addDoc, Timestamp } = await import('firebase/firestore')
+                for (const p of pending) {
+                  await addDoc(collection(firestoreDb, 'users', recoveryCode, 'intakes'), {
+                    amount: p.amount,
+                    timestamp: Timestamp.fromDate(new Date(p.timestamp)),
+                    note: p.note || null,
+                    mood: p.mood || null,
+                  }).catch(() => {})
+                }
+              }
+            } else {
+              setTodayIntakes(firestoreIntakes)
+            }
           }
         } catch {
           const localPlan = loadLocalPlan()
@@ -161,7 +189,10 @@ export function useFirestore() {
         if (mounted) setTodayIntakes(localIntakes)
       }
 
-      if (mounted) setLoading(false)
+      if (mounted) {
+        setLoading(false)
+        initialLoadDone.current = true
+      }
     }
 
     loadData()

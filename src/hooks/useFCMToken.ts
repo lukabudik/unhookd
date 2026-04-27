@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react'
 import { getOrCreateRecoveryCode } from '@/lib/recovery'
+import { getServiceWorkerRegistration } from '@/components/Providers'
 
 const VAPID_KEY =
   'BHETp2qVlTYj8slxzGwUhbtYcj7qwlt1OdG2Gzhv-FSBWqgDbVlQZ1ggMzZoRjajxGzYAfMsLV-jYb7sgh2IJWE'
@@ -18,19 +19,36 @@ export function useFCMToken() {
 
     async function registerToken() {
       try {
-        const { db, auth } = await import('@/lib/firebase')
-        if (!auth.currentUser) return
+        const { auth, db } = await import('@/lib/firebase')
+        const { onAuthStateChanged } = await import('firebase/auth')
+
+        // Wait for Firebase auth to resolve from IndexedDB (auth.currentUser is
+        // null synchronously; onAuthStateChanged fires once the state is loaded)
+        const user = await new Promise<import('firebase/auth').User | null>((resolve) => {
+          const unsub = onAuthStateChanged(auth, (u) => {
+            unsub()
+            resolve(u)
+          })
+        })
+
+        if (!user || cancelled) return
+
+        // Get the shared SW registration (same instance used for push subscriptions)
+        const swReg = await getServiceWorkerRegistration()
+        if (!swReg || cancelled) return
 
         const { getMessaging, getToken } = await import('firebase/messaging')
         const messaging = getMessaging()
 
-        const token = await getToken(messaging, { vapidKey: VAPID_KEY })
+        const token = await getToken(messaging, {
+          vapidKey: VAPID_KEY,
+          serviceWorkerRegistration: swReg,
+        })
         if (!token || cancelled) return
 
-        // Skip if token hasn't changed since last registration
+        // Skip Firestore write if token hasn't changed
         const stored = localStorage.getItem(FCM_TOKEN_KEY)
         if (stored === token) return
-
         localStorage.setItem(FCM_TOKEN_KEY, token)
 
         const recoveryCode = getOrCreateRecoveryCode()
@@ -54,7 +72,7 @@ export function useFCMToken() {
           { merge: true }
         )
       } catch (err) {
-        // FCM not available in this environment — silent fail
+        // FCM not available in this environment (e.g. local dev without HTTPS) — silent fail
         console.debug('[FCM] token registration skipped:', err)
       }
     }
