@@ -85,7 +85,8 @@ function getDailyTarget(plan: LocalPlan, date = new Date()): number {
 }
 
 function formatG(g: number): string {
-  return g % 1 === 0 ? `${g}g` : `${g}g`
+  const rounded = Math.round(g * 10) / 10
+  return `${rounded}g`
 }
 
 function getCurrentStreak(plan: LocalPlan): number {
@@ -448,9 +449,10 @@ export function useNotifications() {
 
     // Re-engagement: last logged 2+ days ago
     const lastLogged = getLastLoggedDate()
+    // Only re-engage if user has logged before (lastLogged !== null) — never fire for brand new users
     const daysSinceLogged = lastLogged
       ? Math.floor((Date.now() - lastLogged.getTime()) / 86400000)
-      : 99
+      : 0
     const reSentKey = `${REENGAGEMENT_SENT_KEY}_${today}`
     if (daysSinceLogged >= 2 && !localStorage.getItem(reSentKey)) {
       localStorage.setItem(reSentKey, '1')
