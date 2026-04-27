@@ -316,7 +316,7 @@ async function sendPush(
 export const sendScheduledNotifications = onSchedule(
   {
     schedule: 'every 1 hours',
-    region: 'europe-west1',
+    region: 'us-central1',
     timeoutSeconds: 540,
     memory: '256MiB',
   },
