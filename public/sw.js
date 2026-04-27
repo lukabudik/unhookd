@@ -25,13 +25,15 @@ self.addEventListener('activate', (event) => {
 })
 
 self.addEventListener('fetch', (event) => {
+  // Only handle same-origin requests
   if (!event.request.url.startsWith(self.location.origin)) return
 
-  if (event.request.mode === 'navigate') {
-    event.respondWith(fetch(event.request).catch(() => caches.match('/') || fetch(event.request)))
-    return
-  }
+  // Don't intercept navigation — let the browser fetch pages normally.
+  // Intercepting navigate with a broken cache fallback caused Safari iOS to
+  // show "This page couldn't load" when no cached copy existed yet.
+  if (event.request.mode === 'navigate') return
 
+  // Cache-first for static assets
   event.respondWith(
     caches.match(event.request).then((cached) => {
       if (cached) return cached
