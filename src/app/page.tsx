@@ -117,12 +117,19 @@ export default function HomePage() {
   const dayNumber = taperPlan ? getDaysSincePlanStart(taperPlan.startDate) + 1 : 1
   const greeting = getGreeting()
 
-  const weekNumber = taperPlan
-    ? Math.min(
-        Math.ceil(getDaysSincePlanStart(taperPlan.startDate) / 7) + 1,
-        taperPlan.weeksToTarget
-      )
-    : null
+  const totalPlanDays = taperPlan
+    ? taperPlan.daysToTarget !== undefined
+      ? taperPlan.daysToTarget
+      : taperPlan.weeksToTarget * 7
+    : 0
+  // Only show week number for plans >= 14 days; short/cold-turkey plans show day count instead
+  const weekNumber =
+    taperPlan && totalPlanDays >= 14
+      ? Math.min(
+          Math.ceil(getDaysSincePlanStart(taperPlan.startDate) / 7) + 1,
+          Math.ceil(totalPlanDays / 7)
+        )
+      : null
 
   const phaseInfo = taperPlan ? detectPhase(taperPlan) : null
   const isPostZero = !!phaseInfo?.isPostZero
@@ -140,7 +147,8 @@ export default function HomePage() {
     if (!taperPlan || isPostZero) return undefined
     const journeyDays = getDaysSincePlanStart(taperPlan.startDate)
     if (journeyDays < 1) return undefined
-    const totalDays = taperPlan.weeksToTarget * 7
+    const totalDays =
+      taperPlan.daysToTarget !== undefined ? taperPlan.daysToTarget : taperPlan.weeksToTarget * 7
     const reduction = taperPlan.startAmount - taperPlan.targetAmount
     // Expected cumulative dose by today vs actual
     const expectedCumulative =
@@ -262,9 +270,13 @@ export default function HomePage() {
                   lineHeight: 1.2,
                 }}
               >
-                {taperPlan && weekNumber
-                  ? `Day ${dayNumber} · Week ${weekNumber} of ${taperPlan.weeksToTarget}`
-                  : 'Welcome to Unhookd'}
+                {taperPlan && totalPlanDays === 0
+                  ? `Day ${dayNumber} — cold turkey`
+                  : taperPlan && weekNumber
+                    ? `Day ${dayNumber} · Week ${weekNumber} of ${Math.ceil(totalPlanDays / 7)}`
+                    : taperPlan
+                      ? `Day ${dayNumber} of ${totalPlanDays}`
+                      : 'Welcome to Unhookd'}
               </h1>
             </div>
             {todayResistances > 0 && (

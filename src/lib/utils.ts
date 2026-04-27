@@ -3,17 +3,17 @@ import { TaperPlan } from './store'
 const LOCAL_INTAKES_PREFIX = 'unhookd_intakes_'
 
 const QUOTES_EARLY = [
-  "Starting is the hardest part. You already did it.",
+  'Starting is the hardest part. You already did it.',
   "Every journey starts with a single step. You're on yours.",
   "You don't have to feel ready. You just have to begin.",
   "The first days are the roughest. They don't last forever.",
-  "Being here and trying is already more than most people do.",
+  'Being here and trying is already more than most people do.',
 ]
 
 const QUOTES_BUILDING = [
   "You're building a new baseline. Keep showing up.",
   "Progress isn't always visible, but it's always real.",
-  "Each day under target is your body getting a little more room to breathe.",
+  'Each day under target is your body getting a little more room to breathe.',
   "You don't need a perfect week. You need today.",
   "The hard part isn't the dose — it's choosing to track it. You did.",
 ]
@@ -22,15 +22,15 @@ const QUOTES_MID = [
   "Somewhere between where you started and where you're going, you found your rhythm.",
   "You've already proven you can do this. Keep proving it.",
   "The middle of the road is where most people quit. You're still here.",
-  "Consistency is the quiet superpower behind every transformation.",
+  'Consistency is the quiet superpower behind every transformation.',
   "It's not about willpower. It's about the small decisions you make every day.",
 ]
 
 const QUOTES_NEAR_END = [
-  "The finish line is getting closer. You can see it now.",
+  'The finish line is getting closer. You can see it now.',
   "You didn't come this far to only come this far.",
   "What you've built over these weeks is real. Don't stop.",
-  "Almost there. The last stretch is where character is forged.",
+  'Almost there. The last stretch is where character is forged.',
   "Look back at where you started. Look where you are now. That's you.",
 ]
 
@@ -38,8 +38,8 @@ const QUOTES_STRUGGLE = [
   "A hard day doesn't erase the work you've put in. It's just a hard day.",
   "One rough day isn't a relapse. It's part of the journey. Keep going.",
   "You don't have to be perfect. You just have to keep showing up.",
-  "Being honest about a hard day takes courage. You have that.",
-  "Every slip in the road is feedback, not failure. Adjust and move forward.",
+  'Being honest about a hard day takes courage. You have that.',
+  'Every slip in the road is feedback, not failure. Adjust and move forward.',
 ]
 
 export function getContextualQuote(dayNumber: number, streak: number, journeyPct: number): string {
@@ -97,6 +97,12 @@ export function getProgressPercent(current: number, target: number): number {
  * smoothly after by subtracting the held days from the day count.
  */
 export function getDailyTargetForDate(plan: TaperPlan, date: Date): number {
+  // daysToTarget is the primary field; 0 means cold turkey (quit immediately)
+  const totalDays = plan.daysToTarget !== undefined ? plan.daysToTarget : plan.weeksToTarget * 7
+
+  // Cold turkey: target from day 0
+  if (totalDays === 0) return plan.targetAmount
+
   const start = new Date(plan.startDate)
   start.setHours(0, 0, 0, 0)
 
@@ -115,9 +121,7 @@ export function getDailyTargetForDate(plan: TaperPlan, date: Date): number {
     holdEnd.setHours(0, 0, 0, 0)
 
     if (target >= holdStart && target <= holdEnd) {
-      // During hold: freeze at the dose from the day the hold began
       const daysToHoldStart = Math.floor((holdStart.getTime() - start.getTime()) / msPerDay)
-      const totalDays = plan.weeksToTarget * 7
       if (daysToHoldStart >= totalDays) return plan.targetAmount
       const reduction = plan.startAmount - plan.targetAmount
       const holdDose = plan.startAmount - (reduction / totalDays) * daysToHoldStart
@@ -125,20 +129,17 @@ export function getDailyTargetForDate(plan: TaperPlan, date: Date): number {
     }
 
     if (target > holdEnd) {
-      // After hold: subtract hold duration so the taper resumes from holdStartDose
       const holdDays = Math.round((holdEnd.getTime() - holdStart.getTime()) / msPerDay) + 1
       daysDiff = Math.max(0, daysDiff - holdDays)
     }
   }
 
-  const totalDays = plan.weeksToTarget * 7
   if (daysDiff >= totalDays) return plan.targetAmount
 
   const reduction = plan.startAmount - plan.targetAmount
   const dailyReduction = reduction / totalDays
   const targetForDay = plan.startAmount - dailyReduction * daysDiff
 
-  // Round to nearest 0.5g for practicality
   return Math.max(plan.targetAmount, Math.round(targetForDay * 2) / 2)
 }
 

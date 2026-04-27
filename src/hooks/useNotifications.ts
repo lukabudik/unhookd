@@ -35,6 +35,7 @@ type LocalPlan = {
   targetAmount: number
   startDate: string
   weeksToTarget: number
+  daysToTarget?: number
   currentDailyTarget: number
   holdUntil?: string
 }
@@ -71,7 +72,8 @@ function hasCheckedInToday(): boolean {
 }
 
 function getDailyTarget(plan: LocalPlan, date = new Date()): number {
-  const totalDays = plan.weeksToTarget * 7
+  const totalDays = plan.daysToTarget !== undefined ? plan.daysToTarget : plan.weeksToTarget * 7
+  if (totalDays === 0) return plan.targetAmount
   const daysDiff = Math.floor((date.getTime() - new Date(plan.startDate).getTime()) / 86400000)
   if (daysDiff < 0) return plan.startAmount
   if (daysDiff >= totalDays) return plan.targetAmount
