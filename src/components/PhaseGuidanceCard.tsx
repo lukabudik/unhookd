@@ -9,7 +9,7 @@ import { getTodayKey } from '@/lib/utils'
 const DISMISS_KEY = 'unhookd_phase_dismissed'
 
 function PhaseIcon({ name, color }: { name: string; color: string }) {
-  const Icon = (LucideIcons as Record<string, LucideIcons.LucideIcon>)[name]
+  const Icon = (LucideIcons as unknown as Record<string, LucideIcons.LucideIcon>)[name]
   if (!Icon) return null
   return <Icon size={22} color={color} strokeWidth={1.75} />
 }

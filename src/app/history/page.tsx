@@ -8,7 +8,7 @@ import { IntakeEntry } from '@/lib/store'
 import { IntakeChart } from '@/components/IntakeChart'
 import { getPastDates, dateToKey, formatGrams, getDailyTargetForDate, getPresets } from '@/lib/utils'
 import { format } from 'date-fns'
-import { Flame } from 'lucide-react'
+import { Flame, Frown, Meh, Smile, SmilePlus, LucideIcon } from 'lucide-react'
 
 interface CheckInData {
   mood: 'awful' | 'rough' | 'okay' | 'good' | 'great'
@@ -16,12 +16,18 @@ interface CheckInData {
   timestamp: string
 }
 
-const MOOD_EMOJI: Record<string, string> = {
-  awful: '😫',
-  rough: '😕',
-  okay: '😐',
-  good: '🙂',
-  great: '😊',
+const MOOD_ICON: Record<string, LucideIcon> = {
+  awful: Frown,
+  rough: Frown,
+  okay: Meh,
+  good: Smile,
+  great: SmilePlus,
+}
+function MoodIndicator({ mood }: { mood: string }) {
+  const Icon = MOOD_ICON[mood]
+  if (!Icon) return null
+  const color = mood === 'good' || mood === 'great' ? 'var(--success)' : mood === 'awful' || mood === 'rough' ? '#e8a87c' : 'var(--text-secondary)'
+  return <Icon size={14} color={color} strokeWidth={1.75} />
 }
 
 interface DayData {
@@ -223,7 +229,7 @@ export default function HistoryPage() {
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 14, fontWeight: isToday ? 700 : 500, color: isToday ? 'var(--primary)' : 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 6 }}>
                         {isToday ? 'Today' : format(day.date, 'EEEE, MMM d')}
-                        {day.checkIn && <span style={{ fontSize: 14 }} title={`Feeling ${day.checkIn.mood}`}>{MOOD_EMOJI[day.checkIn.mood]}</span>}
+                        {day.checkIn && <span style={{ fontSize: 14 }} title={`Feeling ${day.checkIn.mood}`}><MoodIndicator mood={day.checkIn.mood} /></span>}
                       </div>
                       <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>
                         {day.checkIn?.note ? (
@@ -289,7 +295,7 @@ export default function HistoryPage() {
               {/* Mood check-in */}
               {selectedDay.checkIn && (
                 <div style={{ backgroundColor: 'var(--bg)', borderRadius: 12, padding: '10px 14px', marginBottom: 16, display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-                  <span style={{ fontSize: 22 }}>{MOOD_EMOJI[selectedDay.checkIn.mood]}</span>
+                  <MoodIndicator mood={selectedDay.checkIn.mood} />
                   <div>
                     <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>
                       Feeling {selectedDay.checkIn.mood}

@@ -3,7 +3,7 @@ import { getDaysSincePlanStart } from './utils'
 
 export interface Milestone {
   id: string
-  emoji: string
+  icon: string
   title: string
   message: string
   accentColor: string
@@ -28,82 +28,82 @@ export function markMilestoneCelebrated(id: string): void {
   localStorage.setItem(CELEBRATED_KEY, JSON.stringify([...current]))
 }
 
-const STREAK_MILESTONES: Array<{ days: number; emoji: string; title: string; message: string }> = [
+const STREAK_MILESTONES: Array<{ days: number; icon: string; title: string; message: string }> = [
   {
     days: 3,
-    emoji: '🔥',
+    icon: 'Flame',
     title: 'Three days straight',
     message: 'Momentum is building. Three days of showing up for yourself.',
   },
   {
     days: 7,
-    emoji: '🌟',
+    icon: 'Star',
     title: 'One full week!',
     message: 'Seven days of commitment. That\'s not luck — that\'s you choosing this.',
   },
   {
     days: 14,
-    emoji: '💪',
+    icon: 'Trophy',
     title: 'Two-week warrior',
     message: 'Fourteen days in a row. This is becoming part of who you are.',
   },
   {
     days: 21,
-    emoji: '🧠',
+    icon: 'Brain',
     title: '21 days strong',
     message: 'Three weeks. Habits form here. You\'re building a new normal.',
   },
   {
     days: 30,
-    emoji: '🌱',
+    icon: 'Sprout',
     title: 'One month of showing up',
     message: '30 days. A whole month of commitment to yourself. This is remarkable.',
   },
 ]
 
-const JOURNEY_MILESTONES: Array<{ days: number; emoji: string; title: string; message: string }> = [
+const JOURNEY_MILESTONES: Array<{ days: number; icon: string; title: string; message: string }> = [
   {
     days: 7,
-    emoji: '✨',
+    icon: 'Sparkles',
     title: 'One week in',
     message: 'Seven days since you started your journey. You took the first step and kept walking.',
   },
   {
     days: 30,
-    emoji: '🎯',
+    icon: 'Target',
     title: 'One month on the path',
     message: 'A full month since you started. Look how far you\'ve already come.',
   },
   {
     days: 60,
-    emoji: '🏔️',
+    icon: 'Mountain',
     title: 'Two months of growth',
     message: '60 days. You\'ve made this a real, sustained part of your life.',
   },
 ]
 
-const PROGRESS_MILESTONES: Array<{ pct: number; emoji: string; title: string; message: string }> = [
+const PROGRESS_MILESTONES: Array<{ pct: number; icon: string; title: string; message: string }> = [
   {
     pct: 25,
-    emoji: '🌅',
+    icon: 'Sunrise',
     title: 'A quarter of the way there',
     message: '25% through your taper. Every step down is your body healing.',
   },
   {
     pct: 50,
-    emoji: '⚡',
+    icon: 'Zap',
     title: 'Halfway to your goal!',
     message: 'You\'re at the midpoint. The summit is in sight. Keep climbing.',
   },
   {
     pct: 75,
-    emoji: '🔭',
+    icon: 'Telescope',
     title: 'Three quarters done',
     message: '75% complete. The finish line is real now. You can feel it.',
   },
   {
     pct: 100,
-    emoji: '🎉',
+    icon: 'PartyPopper',
     title: 'You reached your goal!',
     message: 'You completed your taper plan. This is huge. Take a moment to feel that.',
   },
@@ -118,14 +118,14 @@ export function checkNewMilestones(plan: TaperPlan, streak: number): Milestone[]
   for (const m of STREAK_MILESTONES) {
     const id = `streak_${m.days}`
     if (!celebrated.has(id) && streak >= m.days) {
-      newMilestones.push({ id, emoji: m.emoji, title: m.title, message: m.message, accentColor: '#7fb069' })
+      newMilestones.push({ id, icon: m.icon, title: m.title, message: m.message, accentColor: '#7fb069' })
     }
   }
 
   for (const m of JOURNEY_MILESTONES) {
     const id = `journey_${m.days}`
     if (!celebrated.has(id) && daysSinceStart >= m.days) {
-      newMilestones.push({ id, emoji: m.emoji, title: m.title, message: m.message, accentColor: '#e8a87c' })
+      newMilestones.push({ id, icon: m.icon, title: m.title, message: m.message, accentColor: '#e8a87c' })
     }
   }
 
@@ -134,7 +134,7 @@ export function checkNewMilestones(plan: TaperPlan, streak: number): Milestone[]
   for (const m of PROGRESS_MILESTONES) {
     const id = `progress_${m.pct}`
     if (!celebrated.has(id) && progressPct >= m.pct) {
-      newMilestones.push({ id, emoji: m.emoji, title: m.title, message: m.message, accentColor: '#e8a87c' })
+      newMilestones.push({ id, icon: m.icon, title: m.title, message: m.message, accentColor: '#e8a87c' })
     }
   }
 

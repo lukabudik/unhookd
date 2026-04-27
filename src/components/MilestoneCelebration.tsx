@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import * as LucideIcons from 'lucide-react'
 import { Milestone } from '@/lib/milestones'
 
 interface Props {
@@ -117,15 +118,27 @@ export function MilestoneCelebration({ milestone, onDismiss }: Props) {
               }}
             />
 
-            {/* Emoji with burst particles */}
+            {/* Icon with burst particles */}
             <div style={{ position: 'relative', display: 'inline-block', marginBottom: 20 }}>
               <motion.div
                 initial={{ scale: 0, rotate: -15 }}
                 animate={{ scale: [0, 1.25, 1], rotate: [-15, 5, 0] }}
                 transition={{ delay: 0.15, duration: 0.6, times: [0, 0.6, 1] }}
-                style={{ fontSize: 68, lineHeight: 1 }}
+                style={{
+                  width: 80,
+                  height: 80,
+                  borderRadius: 24,
+                  backgroundColor: `${milestone.accentColor}18`,
+                  border: `2px solid ${milestone.accentColor}50`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
               >
-                {milestone.emoji}
+                {(() => {
+                  const Icon = (LucideIcons as unknown as Record<string, LucideIcons.LucideIcon>)[milestone.icon]
+                  return Icon ? <Icon size={40} color={milestone.accentColor} strokeWidth={1.5} /> : null
+                })()}
               </motion.div>
               <Particles color={milestone.accentColor} />
             </div>

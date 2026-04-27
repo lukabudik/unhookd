@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
 import { IntakeEntry } from '@/lib/store'
 import { getPresets } from '@/lib/utils'
+import { Frown, Meh, Smile, Utensils, Brain, MessageCircle, Moon, LucideIcon } from 'lucide-react'
 
 type Mood = 'rough' | 'okay' | 'good'
 
@@ -18,18 +19,18 @@ interface QuickLogSheetProps {
   onDismiss: () => void
 }
 
-const MOODS: { value: Mood; emoji: string }[] = [
-  { value: 'rough', emoji: '😣' },
-  { value: 'okay', emoji: '😐' },
-  { value: 'good', emoji: '🙂' },
+const MOODS: { value: Mood; Icon: LucideIcon }[] = [
+  { value: 'rough', Icon: Frown },
+  { value: 'okay', Icon: Meh },
+  { value: 'good', Icon: Smile },
 ]
 
 
 const HALT_OPTIONS = [
-  { key: 'H', label: 'Hungry', emoji: '🍽️' },
-  { key: 'A', label: 'Anxious', emoji: '😰' },
-  { key: 'L', label: 'Lonely', emoji: '💭' },
-  { key: 'T', label: 'Tired', emoji: '😴' },
+  { key: 'H', label: 'Hungry', Icon: Utensils },
+  { key: 'A', label: 'Anxious', Icon: Brain },
+  { key: 'L', label: 'Lonely', Icon: MessageCircle },
+  { key: 'T', label: 'Tired', Icon: Moon },
 ]
 
 export function QuickLogSheet({ isOpen, dailyTarget, todayTotal = 0, lastDoseAt, onLog, onSuccess, onDismiss }: QuickLogSheetProps) {
@@ -162,7 +163,7 @@ export function QuickLogSheet({ isOpen, dailyTarget, todayTotal = 0, lastDoseAt,
                   </div>
 
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                    {HALT_OPTIONS.map(({ key, label, emoji }) => {
+                    {HALT_OPTIONS.map(({ key, label, Icon }) => {
                       const isOn = haltSelected.includes(key)
                       return (
                         <button
@@ -182,7 +183,7 @@ export function QuickLogSheet({ isOpen, dailyTarget, todayTotal = 0, lastDoseAt,
                             transition: 'all 0.15s',
                           }}
                         >
-                          <span style={{ fontSize: 20 }}>{emoji}</span>
+                          <Icon size={20} color={isOn ? 'var(--primary)' : 'var(--text-secondary)'} strokeWidth={1.75} />
                           <span style={{ fontSize: 12, color: isOn ? 'var(--primary)' : 'var(--text-secondary)', fontWeight: isOn ? 700 : 400 }}>
                             {label}
                           </span>
@@ -290,7 +291,7 @@ export function QuickLogSheet({ isOpen, dailyTarget, todayTotal = 0, lastDoseAt,
                       })()}
                     </div>
                     <div style={{ display: 'flex', gap: 6 }}>
-                      {MOODS.map(({ value, emoji }) => (
+                      {MOODS.map(({ value, Icon }) => (
                         <button
                           key={value}
                           onClick={() => setMood(mood === value ? null : value)}
@@ -300,7 +301,6 @@ export function QuickLogSheet({ isOpen, dailyTarget, todayTotal = 0, lastDoseAt,
                             borderRadius: 12,
                             backgroundColor: mood === value ? 'rgba(232,168,124,0.15)' : 'var(--bg)',
                             border: `1px solid ${mood === value ? 'var(--primary)' : 'var(--border)'}`,
-                            fontSize: 20,
                             cursor: 'pointer',
                             transition: 'all 0.15s ease',
                             display: 'flex',
@@ -308,7 +308,7 @@ export function QuickLogSheet({ isOpen, dailyTarget, todayTotal = 0, lastDoseAt,
                             justifyContent: 'center',
                           }}
                         >
-                          {emoji}
+                          <Icon size={20} color={mood === value ? 'var(--primary)' : 'var(--text-secondary)'} strokeWidth={1.75} />
                         </button>
                       ))}
                     </div>

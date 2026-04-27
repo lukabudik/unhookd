@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Moon, BrainCircuit, Activity, Stethoscope, PersonStanding, Sofa } from 'lucide-react'
+import { Moon, BrainCircuit, Activity, Stethoscope, PersonStanding, Sofa, Frown, Meh, Smile, SmilePlus, LucideIcon } from 'lucide-react'
 import { getTodayKey } from '@/lib/utils'
 
 type CheckInMood = 'awful' | 'rough' | 'okay' | 'good' | 'great'
@@ -23,12 +23,12 @@ export interface CheckInData {
   moved?: boolean
 }
 
-const MOODS: { value: CheckInMood; emoji: string; label: string; color: string }[] = [
-  { value: 'awful', emoji: '😫', label: 'Awful', color: '#e05c5c' },
-  { value: 'rough', emoji: '😕', label: 'Rough', color: '#e8a87c' },
-  { value: 'okay', emoji: '😐', label: 'Okay', color: '#b8a898' },
-  { value: 'good', emoji: '🙂', label: 'Good', color: '#7fb069' },
-  { value: 'great', emoji: '😊', label: 'Great', color: '#5bc4a0' },
+const MOODS: { value: CheckInMood; Icon: LucideIcon; label: string; color: string }[] = [
+  { value: 'awful', Icon: Frown, label: 'Awful', color: '#e05c5c' },
+  { value: 'rough', Icon: Frown, label: 'Rough', color: '#e8a87c' },
+  { value: 'okay', Icon: Meh, label: 'Okay', color: '#b8a898' },
+  { value: 'good', Icon: Smile, label: 'Good', color: '#7fb069' },
+  { value: 'great', Icon: SmilePlus, label: 'Great', color: '#5bc4a0' },
 ]
 
 type SymptomIconComponent = React.ComponentType<{ size?: number; color?: string; strokeWidth?: number }>
@@ -124,7 +124,9 @@ export function DailyCheckIn() {
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 }}>
-          <span style={{ fontSize: 24, flexShrink: 0 }}>{moodConfig?.emoji}</span>
+          {moodConfig?.Icon && (
+            <moodConfig.Icon size={24} color={moodConfig.color} strokeWidth={1.75} style={{ flexShrink: 0 }} />
+          )}
           <div style={{ minWidth: 0 }}>
             <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: moodConfig?.color }}>
               Feeling {moodConfig?.label.toLowerCase()} today
@@ -181,7 +183,7 @@ export function DailyCheckIn() {
               transition: 'all 0.15s',
             }}
           >
-            <span style={{ fontSize: 22, lineHeight: 1 }}>{m.emoji}</span>
+            <m.Icon size={22} color={selectedMood === m.value ? m.color : 'var(--text-secondary)'} strokeWidth={1.75} />
             <span style={{ fontSize: 10, color: selectedMood === m.value ? m.color : 'var(--text-secondary)', fontWeight: selectedMood === m.value ? 600 : 400, lineHeight: 1 }}>
               {m.label}
             </span>

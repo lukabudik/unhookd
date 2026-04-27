@@ -5,6 +5,7 @@ import { motion } from 'framer-motion'
 import { useAppStore } from '@/lib/store'
 import { getPastDates, dateToKey, getDailyTargetForDate, formatGrams } from '@/lib/utils'
 import { IntakeEntry } from '@/lib/store'
+import { Shield, Sunrise, Sun, Sunset, Moon, Smile, Meh, Frown, LucideIcon } from 'lucide-react'
 
 interface DaySnapshot {
   date: Date
@@ -127,11 +128,13 @@ function StatCard({
   )
 }
 
-function MoodBar({ label, emoji, count, total, color }: { label: string; emoji: string; count: number; total: number; color: string }) {
+function MoodBar({ label, MoodIcon, count, total, color }: { label: string; MoodIcon: LucideIcon; count: number; total: number; color: string }) {
   const pct = total > 0 ? Math.round((count / total) * 100) : 0
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-      <span style={{ fontSize: 18, flexShrink: 0 }}>{emoji}</span>
+      <div style={{ flexShrink: 0, width: 20, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <MoodIcon size={18} color={color} strokeWidth={1.75} />
+      </div>
       <div style={{ flex: 1 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
           <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{label}</span>
@@ -151,9 +154,10 @@ function MoodBar({ label, emoji, count, total, color }: { label: string; emoji: 
   )
 }
 
-function TimingBubble({ label, emoji, count, max }: { label: string; emoji: string; count: number; max: number }) {
+function TimingBubble({ label, Icon, count, max }: { label: string; Icon: LucideIcon; count: number; max: number }) {
   const pct = max > 0 ? count / max : 0
-  const size = 48 + pct * 32  // 48px min, 80px max
+  const size = 48 + pct * 32
+  const iconSize = Math.round(18 + pct * 8)
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, flex: 1 }}>
       <motion.div
@@ -169,10 +173,9 @@ function TimingBubble({ label, emoji, count, max }: { label: string; emoji: stri
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          fontSize: 20 + pct * 8,
         }}
       >
-        {emoji}
+        <Icon size={iconSize} color={count > 0 ? 'var(--primary)' : 'var(--text-secondary)'} strokeWidth={1.75} />
       </motion.div>
       <div style={{ textAlign: 'center' }}>
         <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)' }}>{count}</div>
@@ -456,7 +459,9 @@ export default function InsightsPage() {
                 fontWeight: 700,
                 color: 'var(--success)',
               }}>
-                🛡️ {data.totalResistances14} total
+                <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Shield size={14} strokeWidth={2} /> {data.totalResistances14} total
+              </span>
               </div>
             </div>
             <ResistanceBarChart data={data.resistanceByDay14} />
@@ -480,9 +485,9 @@ export default function InsightsPage() {
               Mood (last 14 days)
             </h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <MoodBar label="Feeling good" emoji="🙂" count={data.moodCounts.good} total={data.totalMoodEntries} color="var(--success)" />
-              <MoodBar label="Getting by" emoji="😐" count={data.moodCounts.okay} total={data.totalMoodEntries} color="var(--primary)" />
-              <MoodBar label="Rough days" emoji="😣" count={data.moodCounts.rough} total={data.totalMoodEntries} color="var(--danger)" />
+              <MoodBar label="Feeling good" MoodIcon={Smile} count={data.moodCounts.good} total={data.totalMoodEntries} color="var(--success)" />
+              <MoodBar label="Getting by" MoodIcon={Meh} count={data.moodCounts.okay} total={data.totalMoodEntries} color="var(--primary)" />
+              <MoodBar label="Rough days" MoodIcon={Frown} count={data.moodCounts.rough} total={data.totalMoodEntries} color="var(--danger)" />
             </div>
             {data.moodCounts.good > data.moodCounts.rough && (
               <p style={{ fontSize: 13, color: 'var(--success)', marginTop: 14, margin: '14px 0 0 0', fontStyle: 'italic' }}>
@@ -509,10 +514,10 @@ export default function InsightsPage() {
               When you dose
             </h2>
             <div style={{ display: 'flex', gap: 8, justifyContent: 'space-around' }}>
-              <TimingBubble label="Morning" emoji="🌅" count={data.timing.morning} max={maxTiming} />
-              <TimingBubble label="Afternoon" emoji="☀️" count={data.timing.afternoon} max={maxTiming} />
-              <TimingBubble label="Evening" emoji="🌆" count={data.timing.evening} max={maxTiming} />
-              <TimingBubble label="Night" emoji="🌙" count={data.timing.night} max={maxTiming} />
+              <TimingBubble label="Morning" Icon={Sunrise} count={data.timing.morning} max={maxTiming} />
+              <TimingBubble label="Afternoon" Icon={Sun} count={data.timing.afternoon} max={maxTiming} />
+              <TimingBubble label="Evening" Icon={Sunset} count={data.timing.evening} max={maxTiming} />
+              <TimingBubble label="Night" Icon={Moon} count={data.timing.night} max={maxTiming} />
             </div>
             {(() => {
               const peak = (Object.entries(data.timing) as [TimeSlot, number][]).reduce((a, b) => b[1] > a[1] ? b : a)

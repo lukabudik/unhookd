@@ -17,12 +17,12 @@ import { SymptomSuggestionsCard } from '@/components/SymptomSuggestionsCard'
 import { QuickLogSheet } from '@/components/QuickLogSheet'
 import { DailyCheckIn } from '@/components/DailyCheckIn'
 import { format } from 'date-fns'
-import { Bell, Shield, Waves, Flame } from 'lucide-react'
+import { Bell, Shield, Waves, Flame, Frown, Meh, Smile } from 'lucide-react'
 
-function MoodEmoji({ mood }: { mood?: string }) {
-  if (mood === 'rough') return <span>😣</span>
-  if (mood === 'okay') return <span>😐</span>
-  if (mood === 'good') return <span>🙂</span>
+function MoodIcon({ mood }: { mood?: string }) {
+  if (mood === 'rough') return <Frown size={16} color="var(--text-secondary)" strokeWidth={1.75} />
+  if (mood === 'okay') return <Meh size={16} color="var(--text-secondary)" strokeWidth={1.75} />
+  if (mood === 'good') return <Smile size={16} color="var(--success)" strokeWidth={1.75} />
   return null
 }
 
@@ -646,7 +646,7 @@ export default function HomePage() {
                         <span style={{ fontWeight: 700, fontSize: 18, color: 'var(--primary)' }}>
                           {formatGrams(entry.amount)}
                         </span>
-                        <MoodEmoji mood={entry.mood} />
+                        <MoodIcon mood={entry.mood} />
                       </div>
                       {entry.note && (
                         <p

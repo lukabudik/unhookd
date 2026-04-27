@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { IntakeEntry } from '@/lib/store'
 import { getPresets } from '@/lib/utils'
+import { Frown, Meh, Smile, LucideIcon } from 'lucide-react'
 
 type Mood = 'rough' | 'okay' | 'good'
 
@@ -13,10 +14,10 @@ interface DoseLoggerProps {
   dailyTarget?: number
 }
 
-const MOODS: { value: Mood; emoji: string; label: string }[] = [
-  { value: 'rough', emoji: '😣', label: 'Rough' },
-  { value: 'okay', emoji: '😐', label: 'Okay' },
-  { value: 'good', emoji: '🙂', label: 'Good' },
+const MOODS: { value: Mood; Icon: LucideIcon; label: string }[] = [
+  { value: 'rough', Icon: Frown, label: 'Rough' },
+  { value: 'okay', Icon: Meh, label: 'Okay' },
+  { value: 'good', Icon: Smile, label: 'Good' },
 ]
 
 function getNowLocal(): string {
@@ -227,7 +228,7 @@ export function DoseLogger({ onLog, onSuccess, dailyTarget = 6 }: DoseLoggerProp
               How are you feeling?
             </label>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
-              {MOODS.map(({ value, emoji, label }) => {
+              {MOODS.map(({ value, Icon, label }) => {
                 const isSelected = mood === value
                 return (
                   <button
@@ -247,7 +248,7 @@ export function DoseLogger({ onLog, onSuccess, dailyTarget = 6 }: DoseLoggerProp
                       cursor: 'pointer',
                     }}
                   >
-                    <span style={{ fontSize: 22 }}>{emoji}</span>
+                    <Icon size={22} color={isSelected ? 'var(--primary)' : 'var(--text-secondary)'} strokeWidth={1.75} />
                     <span
                       style={{
                         fontSize: 11,

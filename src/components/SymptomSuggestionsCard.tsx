@@ -6,7 +6,7 @@ import * as LucideIcons from 'lucide-react'
 import { Supplement } from '@/lib/phases'
 
 function SupplementIcon({ name }: { name: string }) {
-  const Icon = (LucideIcons as Record<string, LucideIcons.LucideIcon>)[name]
+  const Icon = (LucideIcons as unknown as Record<string, LucideIcons.LucideIcon>)[name]
   if (!Icon) return null
   return <Icon size={18} color="var(--primary)" strokeWidth={1.75} />
 }
