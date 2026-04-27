@@ -20,6 +20,7 @@ import {
   FlaskConical,
 } from 'lucide-react'
 import { getOrCreateRecoveryCode, setRecoveryCode, normalize, isValidCode } from '@/lib/recovery'
+import pkg from '../../../package.json'
 import { NOTIFICATION_TYPES, type NotifType } from '@/hooks/useNotifications'
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -188,7 +189,7 @@ export default function SettingsPage() {
     if (typeof window === 'undefined') return
     const data: Record<string, unknown> = {
       exportedAt: new Date().toISOString(),
-      appVersion: '1.0.0',
+      appVersion: pkg.version,
     }
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i)
@@ -871,7 +872,7 @@ export default function SettingsPage() {
           {/* About section */}
           <Section title="About">
             <Row label="App" value="Unhookd" noBorder={false} />
-            <Row label="Version" value="1.0.0" noBorder={false} />
+            <Row label="Version" value={pkg.version} noBorder={false} />
             <Row label="Purpose" value="Gentle taper tracking" noBorder />
           </Section>
 
