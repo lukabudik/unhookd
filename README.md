@@ -28,12 +28,15 @@ It's a mobile-first PWA designed to be installed on your phone and used daily. E
 
 ### Taper Plan
 - **Linear taper calculator** — set your starting dose, goal, and timeline; the app calculates your daily target automatically
+- **Dose calculator** — enter grams remaining and days to taper; get a recommended daily limit with one tap to apply it
+- **Taper trajectory chart** — SVG arc showing your full planned curve with actual logged dots and a "you are here" marker
 - **Hold mode** — pause the taper for 7 days when you need a breather, then resume smoothly from where you left off
 - **Weekly schedule preview** — see exactly what each week of your taper looks like before you commit
 - **Reasons field** — write down why you're doing this; it shows up inside the craving modal when you need it most
 
 ### Craving Support
 - **Craving SOS** — guided breathing modal with animated orb, contextual message using your personal reasons and current streak
+- **Emergency contact** — optionally set a "my person" name and phone number; a one-tap call button appears inside the SOS modal
 - **HALT check** — when you're about to log over your daily target, a non-judgmental prompt surfaces: Hungry, Anxious, Lonely, Tired?
 - **Resistance tracking** — log when you rode out a craving; counts are tracked in Insights
 
@@ -55,9 +58,12 @@ It's a mobile-first PWA designed to be installed on your phone and used daily. E
 - **Milestones** — streak, journey, and taper progress milestones with celebration modals
 
 ### PWA & Notifications
-- **Installable PWA** — add to home screen on iOS (Safari) or Android (Chrome)
-- **Daily reminders** — configurable reminder time via browser notification API
+- **Installable PWA** — add to home screen on iOS (Safari) or Android (Chrome); install banner shown automatically on first visit
+- **Smart daily reminders** — configurable reminder time; copy adapts to whether you've already logged, your current streak, and time of day
+- **Weekly summary** — Sunday evening notification with last week's stats (days logged, days on target, streak)
 - **Firebase Cloud Messaging** — optional server-push notifications that work when the app is fully closed
+- **Onboarding flow** — 4-slide intro covering privacy, how it works, and realistic expectations; shown once on first open
+- **Dose spacing warning** — gentle note in the quick-log sheet when your last dose was under 2 hours ago
 - **Data export** — download everything as JSON from Settings
 - **Full reset** — wipe all data with a confirmation modal
 
