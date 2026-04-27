@@ -1,0 +1,10 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "intakes",
+      "queryScope": "COLLECTION",
+      "fields": [{ "fieldPath": "timestamp", "order": "ASCENDING" }]
+    }
+  ],
+  "fieldOverrides": []
+}
