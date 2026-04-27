@@ -529,7 +529,19 @@ export default function SettingsPage() {
                   }
                   noBorder={false}
                 />
-                <Row label="Timeline" value={`${taperPlan.weeksToTarget} weeks`} noBorder={false} />
+                <Row
+                  label="Timeline"
+                  value={(() => {
+                    const d =
+                      taperPlan.daysToTarget !== undefined
+                        ? taperPlan.daysToTarget
+                        : taperPlan.weeksToTarget * 7
+                    if (d === 0) return 'Cold turkey'
+                    if (d % 7 === 0) return `${d / 7} weeks`
+                    return `${d} days`
+                  })()}
+                  noBorder={false}
+                />
                 <Row label="Day in journey" value={`Day ${daysSince + 1}`} noBorder={false} />
                 <Row
                   label="Started"

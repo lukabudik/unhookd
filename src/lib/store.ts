@@ -12,7 +12,8 @@ export interface TaperPlan {
   startAmount: number // starting daily grams
   targetAmount: number // goal daily grams (0 = quit)
   startDate: string // ISO date
-  weeksToTarget: number
+  weeksToTarget: number // kept for backward compat — prefer daysToTarget
+  daysToTarget?: number // primary duration field; 0 = cold turkey (quit immediately)
   currentDailyTarget: number
   holdUntil?: string // ISO date — hold ends after this date (inclusive)
   holdStartDate?: string // ISO date — when the hold began
@@ -50,7 +51,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
   updateIntake: (id: string, updates: Partial<Omit<IntakeEntry, 'id'>>) => {
     set((state) => ({
-      todayIntakes: state.todayIntakes.map(e => e.id === id ? { ...e, ...updates } : e),
+      todayIntakes: state.todayIntakes.map((e) => (e.id === id ? { ...e, ...updates } : e)),
     }))
   },
 

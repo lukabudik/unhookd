@@ -20,6 +20,18 @@ export default function PlanPage() {
   const [startAmount, setStartAmount] = useState(taperPlan?.startAmount ?? 8)
   const [targetAmount, setTargetAmount] = useState(taperPlan?.targetAmount ?? 0)
   const [weeksToTarget, setWeeksToTarget] = useState(taperPlan?.weeksToTarget ?? 12)
+  const [daysToTarget, setDaysToTarget] = useState<number>(
+    taperPlan?.daysToTarget !== undefined
+      ? taperPlan.daysToTarget
+      : (taperPlan?.weeksToTarget ?? 12) * 7
+  )
+  // Derive initial unit from existing plan
+  const [taperUnit, setTaperUnit] = useState<'weeks' | 'days' | 'cold_turkey'>(() => {
+    if (!taperPlan) return 'weeks'
+    if (taperPlan.daysToTarget === 0) return 'cold_turkey'
+    if (taperPlan.daysToTarget !== undefined && taperPlan.daysToTarget % 7 !== 0) return 'days'
+    return 'weeks'
+  })
   const [reasons, setReasons] = useState(taperPlan?.reasons ?? '')
   const [contactName, setContactName] = useState(taperPlan?.emergencyContact?.name ?? '')
   const [contactPhone, setContactPhone] = useState(taperPlan?.emergencyContact?.phone ?? '')
@@ -41,6 +53,13 @@ export default function PlanPage() {
       setStartAmount(taperPlan.startAmount)
       setTargetAmount(taperPlan.targetAmount)
       setWeeksToTarget(taperPlan.weeksToTarget)
+      const days =
+        taperPlan.daysToTarget !== undefined ? taperPlan.daysToTarget : taperPlan.weeksToTarget * 7
+      setDaysToTarget(days)
+      if (taperPlan.daysToTarget === 0) setTaperUnit('cold_turkey')
+      else if (taperPlan.daysToTarget !== undefined && taperPlan.daysToTarget % 7 !== 0)
+        setTaperUnit('days')
+      else setTaperUnit('weeks')
       setReasons(taperPlan.reasons ?? '')
       setContactName(taperPlan.emergencyContact?.name ?? '')
       setContactPhone(taperPlan.emergencyContact?.phone ?? '')
@@ -66,21 +85,55 @@ export default function PlanPage() {
     if (reminderEnabled) setReminderTime(time)
   }
 
-  const weeklySchedule = (() => {
-    const steps = []
-    const totalDays = weeksToTarget * 7
-    const reduction = startAmount - targetAmount
-    for (let week = 0; week <= Math.min(weeksToTarget, 12); week++) {
-      const day = week * 7
-      const dailyTarget =
-        week === weeksToTarget
-          ? targetAmount
-          : Math.max(targetAmount, startAmount - (reduction / totalDays) * day)
-      steps.push({
-        week,
-        target: Math.round(dailyTarget * 2) / 2,
-        label: week === 0 ? 'Start' : week === weeksToTarget ? 'Goal' : `Week ${week}`,
-      })
+  // Effective duration in days based on selected unit
+  const effectiveDays =
+    taperUnit === 'cold_turkey' ? 0 : taperUnit === 'days' ? daysToTarget : weeksToTarget * 7
+  const effectiveTargetAmount = taperUnit === 'cold_turkey' ? 0 : targetAmount
+
+  const schedulePreview = (() => {
+    if (taperUnit === 'cold_turkey') {
+      return [{ label: 'From today', target: 0, day: 0 }]
+    }
+
+    const steps: { label: string; target: number; day: number }[] = []
+    const totalDays = effectiveDays
+    const reduction = startAmount - effectiveTargetAmount
+
+    if (taperUnit === 'days') {
+      // Show daily milestones: day 0, then spread across the duration
+      const milestones = [
+        0,
+        ...Array.from({ length: 7 }, (_, i) => Math.round(((i + 1) / 8) * totalDays)),
+      ]
+        .filter((d, i, arr) => arr.indexOf(d) === i && d <= totalDays)
+        .slice(0, 8)
+      for (const day of milestones) {
+        const dailyTarget =
+          day === 0
+            ? startAmount
+            : day >= totalDays
+              ? effectiveTargetAmount
+              : Math.max(effectiveTargetAmount, startAmount - (reduction / totalDays) * day)
+        steps.push({
+          day,
+          target: Math.round(dailyTarget * 2) / 2,
+          label: day === 0 ? 'Today' : day >= totalDays ? 'Goal' : `Day ${day}`,
+        })
+      }
+    } else {
+      // Weeks mode
+      for (let week = 0; week <= Math.min(weeksToTarget, 12); week++) {
+        const day = week * 7
+        const dailyTarget =
+          week === weeksToTarget
+            ? effectiveTargetAmount
+            : Math.max(effectiveTargetAmount, startAmount - (reduction / totalDays) * day)
+        steps.push({
+          day,
+          target: Math.round(dailyTarget * 2) / 2,
+          label: week === 0 ? 'Start' : week === weeksToTarget ? 'Goal' : `Week ${week}`,
+        })
+      }
     }
     return steps
   })()
@@ -90,9 +143,15 @@ export default function PlanPage() {
     setIsSaving(true)
     const plan: TaperPlan = {
       startAmount,
-      targetAmount,
+      targetAmount: effectiveTargetAmount,
       startDate: taperPlan?.startDate ?? getTodayKey(),
-      weeksToTarget,
+      weeksToTarget:
+        taperUnit === 'cold_turkey'
+          ? 0
+          : taperUnit === 'days'
+            ? Math.max(1, Math.round(daysToTarget / 7))
+            : weeksToTarget,
+      daysToTarget: effectiveDays,
       currentDailyTarget: 0,
       reasons: reasons.trim() || undefined,
       emergencyContact: contactName.trim()
@@ -133,8 +192,6 @@ export default function PlanPage() {
   const holdIsActive = !!(
     taperPlan?.holdUntil && new Date(taperPlan.holdUntil) >= new Date(getTodayKey())
   )
-  const weeklyReduction = weeksToTarget > 0 ? (startAmount - targetAmount) / weeksToTarget : 0
-
   if (saved) {
     return (
       <div className="page-container" style={{ paddingTop: 24, paddingBottom: 24 }}>
@@ -204,9 +261,18 @@ export default function PlanPage() {
                   My plan
                 </h1>
                 <p style={{ fontSize: 14, color: 'var(--text-secondary)', margin: 0 }}>
-                  {formatGrams(taperPlan.startAmount)} →{' '}
-                  {taperPlan.targetAmount === 0 ? 'zero' : formatGrams(taperPlan.targetAmount)} over{' '}
-                  {taperPlan.weeksToTarget} weeks
+                  {(() => {
+                    const d =
+                      taperPlan.daysToTarget !== undefined
+                        ? taperPlan.daysToTarget
+                        : taperPlan.weeksToTarget * 7
+                    if (d === 0) return `${formatGrams(taperPlan.startAmount)} → 0g (cold turkey)`
+                    const goal =
+                      taperPlan.targetAmount === 0 ? 'zero' : formatGrams(taperPlan.targetAmount)
+                    if (d % 7 === 0)
+                      return `${formatGrams(taperPlan.startAmount)} → ${goal} over ${d / 7} weeks`
+                    return `${formatGrams(taperPlan.startAmount)} → ${goal} over ${d} days`
+                  })()}
                 </p>
               </div>
               <button
@@ -384,7 +450,13 @@ export default function PlanPage() {
                     marginBottom: 6,
                   }}
                 >
-                  Weekly drop
+                  {(() => {
+                    const d =
+                      taperPlan.daysToTarget !== undefined
+                        ? taperPlan.daysToTarget
+                        : taperPlan.weeksToTarget * 7
+                    return d === 0 ? 'Mode' : d % 7 === 0 ? 'Weekly drop' : 'Daily drop'
+                  })()}
                 </div>
                 <div
                   style={{
@@ -394,7 +466,16 @@ export default function PlanPage() {
                     lineHeight: 1,
                   }}
                 >
-                  {formatGrams(Math.round(weeklyReduction * 10) / 10)}
+                  {(() => {
+                    const d =
+                      taperPlan.daysToTarget !== undefined
+                        ? taperPlan.daysToTarget
+                        : taperPlan.weeksToTarget * 7
+                    if (d === 0) return 'Cold turkey'
+                    const reduction = taperPlan.startAmount - taperPlan.targetAmount
+                    if (d % 7 === 0) return formatGrams(Math.round((reduction / (d / 7)) * 10) / 10)
+                    return formatGrams(Math.round((reduction / d) * 10) / 10)
+                  })()}
                 </div>
               </div>
               <div
@@ -686,76 +767,78 @@ export default function PlanPage() {
               </p>
             </div>
 
-            {/* Target amount */}
-            <div
-              style={{
-                backgroundColor: 'var(--surface)',
-                borderRadius: 20,
-                padding: 20,
-                border: '1px solid var(--border)',
-              }}
-            >
-              <label
+            {/* Target amount — hidden when cold turkey (forced to 0) */}
+            {taperUnit !== 'cold_turkey' && (
+              <div
                 style={{
-                  display: 'block',
-                  fontSize: 13,
-                  fontWeight: 600,
-                  color: 'var(--text-secondary)',
-                  marginBottom: 12,
-                  letterSpacing: '0.05em',
-                  textTransform: 'uppercase',
+                  backgroundColor: 'var(--surface)',
+                  borderRadius: 20,
+                  padding: 20,
+                  border: '1px solid var(--border)',
                 }}
               >
-                Goal amount
-              </label>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                <input
-                  type="range"
-                  min={0}
-                  max={Math.max(startAmount - 0.5, 1)}
-                  step={0.5}
-                  value={targetAmount}
-                  onChange={(e) => setTargetAmount(parseFloat(e.target.value))}
+                <label
                   style={{
-                    flex: 1,
-                    height: 6,
-                    accentColor: 'var(--success)',
-                    cursor: 'pointer',
-                    background: 'none',
-                    border: 'none',
-                    borderRadius: 0,
-                  }}
-                />
-                <div
-                  style={{
-                    minWidth: 60,
-                    textAlign: 'right',
-                    fontSize: 24,
-                    fontWeight: 700,
-                    color: 'var(--success)',
-                  }}
-                >
-                  {targetAmount === 0 ? 'Zero' : formatGrams(targetAmount)}
-                </div>
-              </div>
-              <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '8px 0 0 0' }}>
-                {targetAmount === 0
-                  ? 'Fully quit — a powerful goal. Take it at your pace.'
-                  : `Reduce to ${formatGrams(targetAmount)}/day long-term`}
-              </p>
-              {startAmount <= targetAmount && (
-                <p
-                  style={{
-                    fontSize: 12,
-                    color: 'var(--danger)',
-                    margin: '6px 0 0 0',
+                    display: 'block',
+                    fontSize: 13,
                     fontWeight: 600,
+                    color: 'var(--text-secondary)',
+                    marginBottom: 12,
+                    letterSpacing: '0.05em',
+                    textTransform: 'uppercase',
                   }}
                 >
-                  Goal must be less than starting amount
+                  Goal amount
+                </label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                  <input
+                    type="range"
+                    min={0}
+                    max={Math.max(startAmount - 0.5, 1)}
+                    step={0.5}
+                    value={targetAmount}
+                    onChange={(e) => setTargetAmount(parseFloat(e.target.value))}
+                    style={{
+                      flex: 1,
+                      height: 6,
+                      accentColor: 'var(--success)',
+                      cursor: 'pointer',
+                      background: 'none',
+                      border: 'none',
+                      borderRadius: 0,
+                    }}
+                  />
+                  <div
+                    style={{
+                      minWidth: 60,
+                      textAlign: 'right',
+                      fontSize: 24,
+                      fontWeight: 700,
+                      color: 'var(--success)',
+                    }}
+                  >
+                    {targetAmount === 0 ? 'Zero' : formatGrams(targetAmount)}
+                  </div>
+                </div>
+                <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '8px 0 0 0' }}>
+                  {targetAmount === 0
+                    ? 'Fully quit — a powerful goal. Take it at your pace.'
+                    : `Reduce to ${formatGrams(targetAmount)}/day long-term`}
                 </p>
-              )}
-            </div>
+                {startAmount <= effectiveTargetAmount && (
+                  <p
+                    style={{
+                      fontSize: 12,
+                      color: 'var(--danger)',
+                      margin: '6px 0 0 0',
+                      fontWeight: 600,
+                    }}
+                  >
+                    Goal must be less than starting amount
+                  </p>
+                )}
+              </div>
+            )}
 
             {/* Timeline */}
             <div
@@ -779,43 +862,151 @@ export default function PlanPage() {
               >
                 Timeline
               </label>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                <input
-                  type="range"
-                  min={2}
-                  max={52}
-                  step={1}
-                  value={weeksToTarget}
-                  onChange={(e) => setWeeksToTarget(parseInt(e.target.value))}
-                  style={{
-                    flex: 1,
-                    height: 6,
-                    accentColor: 'var(--primary)',
-                    cursor: 'pointer',
-                    background: 'none',
-                    border: 'none',
-                    borderRadius: 0,
-                  }}
-                />
+
+              {/* Unit toggle */}
+              <div style={{ display: 'flex', gap: 6, marginBottom: 16 }}>
+                {(['weeks', 'days', 'cold_turkey'] as const).map((u) => (
+                  <button
+                    key={u}
+                    onClick={() => setTaperUnit(u)}
+                    style={{
+                      flex: 1,
+                      height: 34,
+                      borderRadius: 10,
+                      fontSize: 13,
+                      fontWeight: taperUnit === u ? 700 : 400,
+                      cursor: 'pointer',
+                      backgroundColor:
+                        taperUnit === u
+                          ? u === 'cold_turkey'
+                            ? 'rgba(224,92,92,0.12)'
+                            : 'rgba(232,168,124,0.15)'
+                          : 'var(--bg)',
+                      color:
+                        taperUnit === u
+                          ? u === 'cold_turkey'
+                            ? '#e05c5c'
+                            : 'var(--primary)'
+                          : 'var(--text-secondary)',
+                      border: `1px solid ${taperUnit === u ? (u === 'cold_turkey' ? '#e05c5c' : 'var(--primary)') : 'var(--border)'}`,
+                      transition: 'all 0.15s',
+                    }}
+                  >
+                    {u === 'weeks' ? 'Weeks' : u === 'days' ? 'Days' : 'Cold turkey'}
+                  </button>
+                ))}
+              </div>
+
+              {taperUnit === 'cold_turkey' ? (
                 <div
                   style={{
-                    minWidth: 80,
-                    textAlign: 'right',
-                    fontSize: 20,
-                    fontWeight: 700,
-                    color: 'var(--text-primary)',
+                    backgroundColor: 'rgba(224,92,92,0.07)',
+                    borderRadius: 12,
+                    padding: '12px 14px',
+                    border: '1px solid rgba(224,92,92,0.2)',
                   }}
                 >
-                  {weeksToTarget}w
+                  <p
+                    style={{ margin: '0 0 4px 0', fontSize: 14, fontWeight: 600, color: '#e05c5c' }}
+                  >
+                    Quit immediately
+                  </p>
+                  <p
+                    style={{
+                      margin: 0,
+                      fontSize: 12,
+                      color: 'var(--text-secondary)',
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    Your target becomes 0g starting today. No gradual reduction. This is the hardest
+                    option — consider a taper if you&apos;ve been using for a long time.
+                  </p>
                 </div>
-              </div>
-              <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '8px 0 0 0' }}>
-                Reducing by ~{formatGrams(Math.round(weeklyReduction * 10) / 10)} per week — slow
-                and steady wins
-              </p>
+              ) : taperUnit === 'days' ? (
+                <>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                    <input
+                      type="range"
+                      min={1}
+                      max={90}
+                      step={1}
+                      value={daysToTarget}
+                      onChange={(e) => setDaysToTarget(parseInt(e.target.value))}
+                      style={{
+                        flex: 1,
+                        height: 6,
+                        accentColor: 'var(--primary)',
+                        cursor: 'pointer',
+                        background: 'none',
+                        border: 'none',
+                        borderRadius: 0,
+                      }}
+                    />
+                    <div
+                      style={{
+                        minWidth: 60,
+                        textAlign: 'right',
+                        fontSize: 20,
+                        fontWeight: 700,
+                        color: 'var(--text-primary)',
+                      }}
+                    >
+                      {daysToTarget}d
+                    </div>
+                  </div>
+                  <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '8px 0 0 0' }}>
+                    Reducing by ~
+                    {formatGrams(
+                      Math.round(((startAmount - effectiveTargetAmount) / daysToTarget) * 10) / 10
+                    )}{' '}
+                    per day
+                  </p>
+                </>
+              ) : (
+                <>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                    <input
+                      type="range"
+                      min={1}
+                      max={52}
+                      step={1}
+                      value={weeksToTarget}
+                      onChange={(e) => setWeeksToTarget(parseInt(e.target.value))}
+                      style={{
+                        flex: 1,
+                        height: 6,
+                        accentColor: 'var(--primary)',
+                        cursor: 'pointer',
+                        background: 'none',
+                        border: 'none',
+                        borderRadius: 0,
+                      }}
+                    />
+                    <div
+                      style={{
+                        minWidth: 60,
+                        textAlign: 'right',
+                        fontSize: 20,
+                        fontWeight: 700,
+                        color: 'var(--text-primary)',
+                      }}
+                    >
+                      {weeksToTarget}w
+                    </div>
+                  </div>
+                  <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '8px 0 0 0' }}>
+                    Reducing by ~
+                    {formatGrams(
+                      Math.round(((startAmount - effectiveTargetAmount) / weeksToTarget) * 10) / 10
+                    )}{' '}
+                    per week — slow and steady wins
+                  </p>
+                </>
+              )}
             </div>
 
-            {/* Weekly schedule preview */}
+            {/* Schedule preview */}
             <div>
               <h3
                 style={{
@@ -837,26 +1028,24 @@ export default function PlanPage() {
                   overflow: 'hidden',
                 }}
               >
-                {weeklySchedule.slice(0, 8).map((step, i) => (
+                {schedulePreview.map((step, i) => (
                   <div
-                    key={step.week}
+                    key={step.day}
                     style={{
                       display: 'flex',
                       justifyContent: 'space-between',
                       alignItems: 'center',
                       padding: '12px 16px',
                       borderBottom:
-                        i < Math.min(weeklySchedule.length - 1, 7)
-                          ? '1px solid var(--border)'
-                          : 'none',
-                      backgroundColor: step.week === 0 ? 'rgba(232,168,124,0.05)' : 'transparent',
+                        i < schedulePreview.length - 1 ? '1px solid var(--border)' : 'none',
+                      backgroundColor: i === 0 ? 'rgba(232,168,124,0.05)' : 'transparent',
                     }}
                   >
                     <span
                       style={{
                         fontSize: 14,
-                        color: step.week === 0 ? 'var(--primary)' : 'var(--text-secondary)',
-                        fontWeight: step.week === 0 ? 600 : 400,
+                        color: i === 0 ? 'var(--primary)' : 'var(--text-secondary)',
+                        fontWeight: i === 0 ? 600 : 400,
                       }}
                     >
                       {step.label}
@@ -866,26 +1055,15 @@ export default function PlanPage() {
                         fontSize: 16,
                         fontWeight: 700,
                         color:
-                          step.week === weeksToTarget ? 'var(--success)' : 'var(--text-primary)',
+                          step.target === effectiveTargetAmount
+                            ? 'var(--success)'
+                            : 'var(--text-primary)',
                       }}
                     >
-                      {formatGrams(step.target)}/day
+                      {step.target === 0 ? '0g' : formatGrams(step.target)}/day
                     </span>
                   </div>
                 ))}
-                {weeklySchedule.length > 8 && (
-                  <div
-                    style={{
-                      padding: '12px 16px',
-                      textAlign: 'center',
-                      fontSize: 12,
-                      color: 'var(--text-secondary)',
-                    }}
-                  >
-                    ...and {weeklySchedule.length - 8} more weeks until {formatGrams(targetAmount)}
-                    /day
-                  </div>
-                )}
               </div>
             </div>
 
@@ -1030,19 +1208,29 @@ export default function PlanPage() {
             {/* Save button */}
             <button
               onClick={handleSave}
-              disabled={isSaving || startAmount <= targetAmount}
+              disabled={
+                isSaving || (taperUnit !== 'cold_turkey' && startAmount <= effectiveTargetAmount)
+              }
               style={{
                 height: 56,
                 borderRadius: 16,
                 backgroundColor:
-                  startAmount > targetAmount ? 'var(--primary)' : 'var(--surface-elevated)',
-                color: startAmount > targetAmount ? 'var(--bg)' : 'var(--text-secondary)',
+                  taperUnit === 'cold_turkey' || startAmount > effectiveTargetAmount
+                    ? 'var(--primary)'
+                    : 'var(--surface-elevated)',
+                color:
+                  taperUnit === 'cold_turkey' || startAmount > effectiveTargetAmount
+                    ? 'var(--bg)'
+                    : 'var(--text-secondary)',
                 fontWeight: 700,
                 fontSize: 17,
                 border: 'none',
                 transition: 'all 0.2s ease',
                 opacity: isSaving ? 0.7 : 1,
-                cursor: isSaving || startAmount <= targetAmount ? 'not-allowed' : 'pointer',
+                cursor:
+                  isSaving || (taperUnit !== 'cold_turkey' && startAmount <= effectiveTargetAmount)
+                    ? 'not-allowed'
+                    : 'pointer',
               }}
             >
               {isSaving ? 'Saving...' : taperPlan ? 'Update plan' : 'Start my journey'}

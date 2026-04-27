@@ -35,6 +35,7 @@ type LocalPlan = {
   targetAmount: number
   startDate: string
   weeksToTarget: number
+  daysToTarget?: number
   currentDailyTarget: number
   holdUntil?: string
 }
@@ -71,7 +72,8 @@ function hasCheckedInToday(): boolean {
 }
 
 function getDailyTarget(plan: LocalPlan, date = new Date()): number {
-  const totalDays = plan.weeksToTarget * 7
+  const totalDays = plan.daysToTarget !== undefined ? plan.daysToTarget : plan.weeksToTarget * 7
+  if (totalDays === 0) return plan.targetAmount
   const daysDiff = Math.floor((date.getTime() - new Date(plan.startDate).getTime()) / 86400000)
   if (daysDiff < 0) return plan.startAmount
   if (daysDiff >= totalDays) return plan.targetAmount
@@ -85,7 +87,8 @@ function getDailyTarget(plan: LocalPlan, date = new Date()): number {
 }
 
 function formatG(g: number): string {
-  return g % 1 === 0 ? `${g}g` : `${g}g`
+  const rounded = Math.round(g * 10) / 10
+  return `${rounded}g`
 }
 
 function getCurrentStreak(plan: LocalPlan): number {
@@ -448,9 +451,10 @@ export function useNotifications() {
 
     // Re-engagement: last logged 2+ days ago
     const lastLogged = getLastLoggedDate()
+    // Only re-engage if user has logged before (lastLogged !== null) — never fire for brand new users
     const daysSinceLogged = lastLogged
       ? Math.floor((Date.now() - lastLogged.getTime()) / 86400000)
-      : 99
+      : 0
     const reSentKey = `${REENGAGEMENT_SENT_KEY}_${today}`
     if (daysSinceLogged >= 2 && !localStorage.getItem(reSentKey)) {
       localStorage.setItem(reSentKey, '1')
