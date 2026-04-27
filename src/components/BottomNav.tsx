@@ -182,7 +182,9 @@ export function BottomNav() {
         bottom: 0,
         left: 0,
         right: 0,
-        backgroundColor: 'var(--surface)',
+        backgroundColor: 'rgba(37, 32, 24, 0.92)',
+        backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)',
         borderTop: '1px solid var(--border)',
         paddingBottom: 'env(safe-area-inset-bottom)',
         zIndex: 50,
@@ -194,6 +196,8 @@ export function BottomNav() {
           margin: '0 auto',
           display: 'grid',
           gridTemplateColumns: 'repeat(5, 1fr)',
+          paddingLeft: 'max(4px, env(safe-area-inset-left))',
+          paddingRight: 'max(4px, env(safe-area-inset-right))',
         }}
       >
         {tabs.map(({ href, label, Icon }) => {
@@ -207,19 +211,32 @@ export function BottomNav() {
                 flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: 4,
-                padding: '10px 8px',
+                gap: 3,
+                padding: '8px 4px 10px',
                 textDecoration: 'none',
-                transition: 'opacity 0.15s',
               }}
             >
-              <Icon active={isActive} />
+              <div
+                style={{
+                  width: 48,
+                  height: 30,
+                  borderRadius: 10,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: isActive ? 'rgba(232,168,124,0.15)' : 'transparent',
+                  transition: 'background-color 0.18s ease',
+                }}
+              >
+                <Icon active={isActive} />
+              </div>
               <span
                 style={{
                   fontSize: 10,
-                  fontWeight: 500,
+                  fontWeight: isActive ? 600 : 400,
                   color: isActive ? 'var(--primary)' : 'var(--text-secondary)',
-                  letterSpacing: '0.03em',
+                  letterSpacing: '0.02em',
+                  transition: 'color 0.18s ease',
                 }}
               >
                 {label}
