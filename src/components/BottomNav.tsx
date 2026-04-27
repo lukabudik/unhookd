@@ -146,12 +146,30 @@ function InsightsIcon({ active }: { active: boolean }) {
   )
 }
 
+function SettingsIcon({ active }: { active: boolean }) {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15Z"
+        stroke={active ? 'var(--primary)' : 'var(--text-secondary)'}
+        strokeWidth="1.75"
+        fill={active ? 'rgba(232,168,124,0.2)' : 'none'}
+      />
+      <path
+        d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"
+        stroke={active ? 'var(--primary)' : 'var(--text-secondary)'}
+        strokeWidth="1.75"
+      />
+    </svg>
+  )
+}
+
 const tabs = [
   { href: '/', label: 'Today', Icon: HomeIcon },
-  { href: '/log', label: 'Log', Icon: LogIcon },
   { href: '/history', label: 'History', Icon: HistoryIcon },
   { href: '/insights', label: 'Insights', Icon: InsightsIcon },
   { href: '/plan', label: 'Plan', Icon: PlanIcon },
+  { href: '/settings', label: 'Settings', Icon: SettingsIcon },
 ]
 
 export function BottomNav() {
@@ -164,7 +182,9 @@ export function BottomNav() {
         bottom: 0,
         left: 0,
         right: 0,
-        backgroundColor: 'var(--surface)',
+        backgroundColor: 'rgba(37, 32, 24, 0.92)',
+        backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)',
         borderTop: '1px solid var(--border)',
         paddingBottom: 'env(safe-area-inset-bottom)',
         zIndex: 50,
@@ -176,6 +196,8 @@ export function BottomNav() {
           margin: '0 auto',
           display: 'grid',
           gridTemplateColumns: 'repeat(5, 1fr)',
+          paddingLeft: 'max(4px, env(safe-area-inset-left))',
+          paddingRight: 'max(4px, env(safe-area-inset-right))',
         }}
       >
         {tabs.map(({ href, label, Icon }) => {
@@ -189,19 +211,36 @@ export function BottomNav() {
                 flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: 4,
-                padding: '10px 8px',
+                gap: 3,
+                padding: '8px 4px 10px',
                 textDecoration: 'none',
-                transition: 'opacity 0.15s',
+                cursor: 'pointer',
+                touchAction: 'manipulation',
+                WebkitTapHighlightColor: 'transparent',
               }}
             >
-              <Icon active={isActive} />
+              <div
+                style={{
+                  width: 48,
+                  height: 30,
+                  borderRadius: 10,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: isActive ? 'rgba(232,168,124,0.15)' : 'transparent',
+                  transition: 'background-color 0.18s ease',
+                  pointerEvents: 'none',
+                }}
+              >
+                <Icon active={isActive} />
+              </div>
               <span
                 style={{
                   fontSize: 10,
-                  fontWeight: 500,
+                  fontWeight: isActive ? 600 : 400,
                   color: isActive ? 'var(--primary)' : 'var(--text-secondary)',
-                  letterSpacing: '0.03em',
+                  letterSpacing: '0.02em',
+                  transition: 'color 0.18s ease',
                 }}
               >
                 {label}

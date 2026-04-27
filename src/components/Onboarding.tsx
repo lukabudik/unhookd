@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
-import { Heart, Lock, ClipboardList, MapPin, Waves } from 'lucide-react'
+import { Heart, Lock, ClipboardList, MapPin, Waves, ArrowLeft, ArrowRight } from 'lucide-react'
 
 const ONBOARDED_KEY = 'unhookd_onboarded'
 
@@ -11,13 +11,13 @@ const SLIDES = [
   {
     SlideIcon: Heart,
     title: "You're not alone in this.",
-    body: "Unhookd is a private taper companion for people reducing or quitting kratom. It tracks your doses, supports you through cravings, and helps you understand how your body is responding — one day at a time.",
+    body: 'Unhookd is a private taper companion for people reducing or quitting kratom. It tracks your doses, supports you through cravings, and helps you understand how your body is responding — one day at a time.',
     accent: 'var(--primary)',
   },
   {
     SlideIcon: Lock,
     title: 'Private by design.',
-    body: 'Your logs are stored on this device. No name, email, or identifying information is ever collected — you\'re completely anonymous.\n\nAnonymous usage patterns are shared to help us understand what actually supports kratom recovery. Nothing can ever be traced back to you.',
+    body: "Your logs are stored on this device. No name, email, or identifying information is ever collected — you're completely anonymous.\n\nAnonymous usage patterns are shared to help us understand what actually supports kratom recovery. Nothing can ever be traced back to you.",
     accent: 'var(--success)',
   },
   {
@@ -26,9 +26,22 @@ const SLIDES = [
     body: null,
     accent: 'var(--primary)',
     features: [
-      { FeatureIcon: ClipboardList, title: 'Set a plan', detail: 'Tell the app your starting dose and goal — it calculates your daily target automatically.' },
-      { FeatureIcon: MapPin, title: 'Log daily', detail: 'Takes 5 seconds. The app tracks your progress, streak, and patterns over time.' },
-      { FeatureIcon: Waves, title: 'Use SOS when it\'s hard', detail: 'Guided breathing and craving support when you need it most.' },
+      {
+        FeatureIcon: ClipboardList,
+        title: 'Set a plan',
+        detail:
+          'Tell the app your starting dose and goal — it calculates your daily target automatically.',
+      },
+      {
+        FeatureIcon: MapPin,
+        title: 'Log daily',
+        detail: 'Takes 5 seconds. The app tracks your progress, streak, and patterns over time.',
+      },
+      {
+        FeatureIcon: Waves,
+        title: "Use SOS when it's hard",
+        detail: 'Guided breathing and craving support when you need it most.',
+      },
     ],
   },
   {
@@ -69,14 +82,14 @@ export function Onboarding() {
   function next() {
     if (slide < SLIDES.length - 1) {
       setDirection(1)
-      setSlide(s => s + 1)
+      setSlide((s) => s + 1)
     }
   }
 
   function prev() {
     if (slide > 0) {
       setDirection(-1)
-      setSlide(s => s - 1)
+      setSlide((s) => s - 1)
     }
   }
 
@@ -117,7 +130,16 @@ export function Onboarding() {
           </div>
 
           {/* Slide content */}
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '24px 32px', overflow: 'hidden' }}>
+          <div
+            style={{
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              padding: '24px 32px',
+              overflow: 'hidden',
+            }}
+          >
             <AnimatePresence mode="wait" custom={direction}>
               <motion.div
                 key={slide}
@@ -176,7 +198,10 @@ export function Onboarding() {
                 {current.features && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                     {current.features.map((f) => (
-                      <div key={f.title} style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+                      <div
+                        key={f.title}
+                        style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}
+                      >
                         <div
                           style={{
                             width: 44,
@@ -193,10 +218,24 @@ export function Onboarding() {
                           <f.FeatureIcon size={20} color="var(--primary)" strokeWidth={1.75} />
                         </div>
                         <div>
-                          <p style={{ margin: '0 0 3px 0', fontSize: 15, fontWeight: 700, color: 'var(--text-primary)' }}>
+                          <p
+                            style={{
+                              margin: '0 0 3px 0',
+                              fontSize: 15,
+                              fontWeight: 700,
+                              color: 'var(--text-primary)',
+                            }}
+                          >
                             {f.title}
                           </p>
-                          <p style={{ margin: 0, fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                          <p
+                            style={{
+                              margin: 0,
+                              fontSize: 13,
+                              color: 'var(--text-secondary)',
+                              lineHeight: 1.5,
+                            }}
+                          >
                             {f.detail}
                           </p>
                         </div>
@@ -215,7 +254,10 @@ export function Onboarding() {
               {SLIDES.map((_, i) => (
                 <button
                   key={i}
-                  onClick={() => { setDirection(i > slide ? 1 : -1); setSlide(i) }}
+                  onClick={() => {
+                    setDirection(i > slide ? 1 : -1)
+                    setSlide(i)
+                  }}
                   style={{
                     width: i === slide ? 20 : 6,
                     height: 6,
@@ -246,7 +288,9 @@ export function Onboarding() {
                     cursor: 'pointer',
                   }}
                 >
-                  Set up my plan →
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                    Set up my plan <ArrowRight size={17} strokeWidth={2} />
+                  </span>
                 </button>
                 <button
                   onClick={skip}
@@ -281,7 +325,7 @@ export function Onboarding() {
                       flexShrink: 0,
                     }}
                   >
-                    ←
+                    <ArrowLeft size={20} strokeWidth={2} />
                   </button>
                 )}
                 <button
@@ -298,7 +342,9 @@ export function Onboarding() {
                     cursor: 'pointer',
                   }}
                 >
-                  Next →
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                    Next <ArrowRight size={17} strokeWidth={2} />
+                  </span>
                 </button>
               </div>
             )}

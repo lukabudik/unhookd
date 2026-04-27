@@ -14,7 +14,20 @@ import {
   getPresets,
 } from '@/lib/utils'
 import { format } from 'date-fns'
-import { Flame, Frown, Meh, Smile, SmilePlus, LucideIcon } from 'lucide-react'
+import {
+  Flame,
+  Frown,
+  Meh,
+  Smile,
+  SmilePlus,
+  Pencil,
+  X,
+  CheckCircle2,
+  Circle,
+  TrendingUp,
+  ChevronRight,
+  LucideIcon,
+} from 'lucide-react'
 
 interface CheckInData {
   mood: 'awful' | 'rough' | 'okay' | 'good' | 'great'
@@ -78,9 +91,10 @@ export default function HistoryPage() {
     dayKey: string
   } | null>(null)
   const [showAddForDay, setShowAddForDay] = useState(false)
+  const [visibleDays, setVisibleDays] = useState(30)
 
   const loadHistory = useCallback(async () => {
-    const dates = getPastDates(30)
+    const dates = getPastDates(90)
     const data = await Promise.all(
       dates.map(async (date) => {
         const key = dateToKey(date)
@@ -242,20 +256,65 @@ export default function HistoryPage() {
           <IntakeChart data={chartData} plan={taperPlan} />
         )}
 
-        {/* 30-day list */}
+        {/* History list */}
         <div>
-          <h2
+          <div
             style={{
-              fontSize: 15,
-              fontWeight: 600,
-              color: 'var(--text-secondary)',
-              margin: '0 0 12px 0',
-              letterSpacing: '0.04em',
-              textTransform: 'uppercase',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: 12,
             }}
           >
-            Past 30 days
-          </h2>
+            <h2
+              style={{
+                fontSize: 15,
+                fontWeight: 600,
+                color: 'var(--text-secondary)',
+                margin: 0,
+                letterSpacing: '0.04em',
+                textTransform: 'uppercase',
+              }}
+            >
+              Past {Math.min(visibleDays, historyData.length)} days
+            </h2>
+            {/* Status legend */}
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+              <span
+                style={{
+                  fontSize: 10,
+                  color: 'var(--success)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 3,
+                }}
+              >
+                <CheckCircle2 size={10} strokeWidth={2} /> On target
+              </span>
+              <span
+                style={{
+                  fontSize: 10,
+                  color: 'var(--danger)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 3,
+                }}
+              >
+                <TrendingUp size={10} strokeWidth={2} /> Over
+              </span>
+              <span
+                style={{
+                  fontSize: 10,
+                  color: 'var(--text-secondary)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 3,
+                }}
+              >
+                <Circle size={10} strokeWidth={2} /> None
+              </span>
+            </div>
+          </div>
 
           {loading ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -274,95 +333,120 @@ export default function HistoryPage() {
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {[...historyData].reverse().map((day, i) => {
-                const isOver = day.total > day.target
-                const isZero = day.total === 0
-                const isToday = dateToKey(day.date) === dateToKey(new Date())
+              {[...historyData]
+                .reverse()
+                .slice(0, visibleDays)
+                .map((day, i) => {
+                  const isOver = day.total > day.target
+                  const isZero = day.total === 0
+                  const isToday = dateToKey(day.date) === dateToKey(new Date())
 
-                let statusColor = 'var(--success)'
-                if (isZero) statusColor = 'var(--text-secondary)'
-                else if (isOver) statusColor = 'var(--danger)'
+                  let statusColor = 'var(--success)'
+                  if (isZero) statusColor = 'var(--text-secondary)'
+                  else if (isOver) statusColor = 'var(--danger)'
 
-                let statusDot = '●'
-                if (isZero) statusDot = '○'
-                else if (isOver) statusDot = '▲'
+                  const StatusIcon = isZero ? Circle : isOver ? TrendingUp : CheckCircle2
 
-                return (
-                  <motion.div
-                    key={day.key}
-                    initial={{ opacity: 0, x: -8 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * 0.02 }}
-                    onClick={() => setSelectedDay(day)}
-                    style={{
-                      backgroundColor: 'var(--surface)',
-                      borderRadius: 14,
-                      padding: '12px 14px',
-                      border: `1px solid ${isToday ? 'rgba(232,168,124,0.3)' : 'var(--border)'}`,
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div
-                        style={{
-                          fontSize: 14,
-                          fontWeight: isToday ? 700 : 500,
-                          color: isToday ? 'var(--primary)' : 'var(--text-primary)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 6,
-                        }}
-                      >
-                        {isToday ? 'Today' : format(day.date, 'EEEE, MMM d')}
-                        {day.checkIn && (
-                          <span style={{ fontSize: 14 }} title={`Feeling ${day.checkIn.mood}`}>
-                            <MoodIndicator mood={day.checkIn.mood} />
-                          </span>
-                        )}
+                  return (
+                    <motion.div
+                      key={day.key}
+                      initial={{ opacity: 0, x: -8 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: i * 0.02 }}
+                      onClick={() => setSelectedDay(day)}
+                      style={{
+                        backgroundColor: 'var(--surface)',
+                        borderRadius: 14,
+                        padding: '12px 14px',
+                        border: `1px solid ${isToday ? 'rgba(232,168,124,0.3)' : 'var(--border)'}`,
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div
+                          style={{
+                            fontSize: 14,
+                            fontWeight: isToday ? 700 : 500,
+                            color: isToday ? 'var(--primary)' : 'var(--text-primary)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 6,
+                          }}
+                        >
+                          {isToday ? 'Today' : format(day.date, 'EEEE, MMM d')}
+                          {day.checkIn && (
+                            <span style={{ fontSize: 14 }} title={`Feeling ${day.checkIn.mood}`}>
+                              <MoodIndicator mood={day.checkIn.mood} />
+                            </span>
+                          )}
+                        </div>
+                        <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>
+                          {day.checkIn?.note ? (
+                            <span
+                              style={{
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                                display: 'block',
+                                maxWidth: 180,
+                              }}
+                            >
+                              {day.checkIn.note}
+                            </span>
+                          ) : (
+                            `target: ${formatGrams(day.target)}`
+                          )}
+                        </div>
                       </div>
-                      <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>
-                        {day.checkIn?.note ? (
-                          <span
-                            style={{
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap',
-                              display: 'block',
-                              maxWidth: 180,
-                            }}
-                          >
-                            {day.checkIn.note}
-                          </span>
-                        ) : (
-                          `target: ${formatGrams(day.target)}`
-                        )}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <div
+                          style={{
+                            fontSize: 18,
+                            fontWeight: 700,
+                            color: statusColor,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 6,
+                          }}
+                        >
+                          <StatusIcon size={12} strokeWidth={2} />
+                          {isZero ? '—' : formatGrams(day.total)}
+                        </div>
+                        <ChevronRight
+                          size={14}
+                          color="var(--text-secondary)"
+                          strokeWidth={2}
+                          style={{ opacity: 0.4 }}
+                        />
                       </div>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <div
-                        style={{
-                          fontSize: 18,
-                          fontWeight: 700,
-                          color: statusColor,
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 6,
-                        }}
-                      >
-                        <span style={{ fontSize: 10 }}>{statusDot}</span>
-                        {isZero ? '—' : formatGrams(day.total)}
-                      </div>
-                      <span style={{ fontSize: 12, color: 'var(--text-secondary)', opacity: 0.5 }}>
-                        ›
-                      </span>
-                    </div>
-                  </motion.div>
-                )
-              })}
+                    </motion.div>
+                  )
+                })}
             </div>
+          )}
+
+          {/* Load more */}
+          {!loading && visibleDays < historyData.length && (
+            <button
+              onClick={() => setVisibleDays((v) => Math.min(v + 30, historyData.length))}
+              style={{
+                marginTop: 8,
+                width: '100%',
+                height: 44,
+                borderRadius: 12,
+                backgroundColor: 'transparent',
+                border: '1px solid var(--border)',
+                color: 'var(--text-secondary)',
+                fontSize: 14,
+                cursor: 'pointer',
+                fontWeight: 500,
+              }}
+            >
+              Load {Math.min(30, historyData.length - visibleDays)} more days
+            </button>
           )}
         </div>
       </motion.div>
@@ -455,12 +539,12 @@ export default function HistoryPage() {
                     background: 'none',
                     border: 'none',
                     color: 'var(--text-secondary)',
-                    fontSize: 22,
                     cursor: 'pointer',
                     padding: 0,
+                    display: 'flex',
                   }}
                 >
-                  ×
+                  <X size={22} strokeWidth={2} />
                 </button>
               </div>
 
@@ -561,9 +645,15 @@ export default function HistoryPage() {
                               >
                                 {formatGrams(intake.amount)}
                               </span>
-                              {intake.mood === 'rough' && <span>😣</span>}
-                              {intake.mood === 'okay' && <span>😐</span>}
-                              {intake.mood === 'good' && <span>🙂</span>}
+                              {intake.mood === 'rough' && (
+                                <Frown size={14} color="var(--text-secondary)" strokeWidth={1.75} />
+                              )}
+                              {intake.mood === 'okay' && (
+                                <Meh size={14} color="var(--text-secondary)" strokeWidth={1.75} />
+                              )}
+                              {intake.mood === 'good' && (
+                                <Smile size={14} color="var(--success)" strokeWidth={1.75} />
+                              )}
                             </div>
                             {intake.note && (
                               <p
@@ -601,12 +691,11 @@ export default function HistoryPage() {
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                fontSize: 12,
                                 padding: 0,
                                 flexShrink: 0,
                               }}
                             >
-                              ✎
+                              <Pencil size={13} strokeWidth={2} />
                             </button>
                             <button
                               onClick={() => deleteHistoricalIntake(selectedDay.key, intake.id)}
@@ -621,12 +710,11 @@ export default function HistoryPage() {
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                fontSize: 14,
                                 padding: 0,
                                 flexShrink: 0,
                               }}
                             >
-                              ×
+                              <X size={14} strokeWidth={2} />
                             </button>
                           </div>
                         </div>
@@ -770,7 +858,25 @@ function HistoryEntryEditor({
               border: `1px solid ${mood === m ? 'var(--primary)' : 'var(--border)'}`,
             }}
           >
-            {m === 'rough' ? '😣' : m === 'okay' ? '😐' : '🙂'}
+            {m === 'rough' ? (
+              <Frown
+                size={18}
+                color={mood === m ? 'var(--primary)' : 'var(--text-secondary)'}
+                strokeWidth={1.75}
+              />
+            ) : m === 'okay' ? (
+              <Meh
+                size={18}
+                color={mood === m ? 'var(--primary)' : 'var(--text-secondary)'}
+                strokeWidth={1.75}
+              />
+            ) : (
+              <Smile
+                size={18}
+                color={mood === m ? 'var(--primary)' : 'var(--text-secondary)'}
+                strokeWidth={1.75}
+              />
+            )}
           </button>
         ))}
       </div>

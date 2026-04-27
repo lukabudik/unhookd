@@ -8,6 +8,7 @@ import { useAppStore } from '@/lib/store'
 import { useNotifications } from '@/hooks/useNotifications'
 import { formatGrams, getDaysSincePlanStart, getDailyTargetForDate } from '@/lib/utils'
 import { format } from 'date-fns'
+import { ArrowLeft, ChevronRight, AlertTriangle, Check } from 'lucide-react'
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -82,7 +83,7 @@ function Row({
         <span style={{ fontSize: 14, color: 'var(--text-secondary)' }}>
           {value}
           {(onClick || href) && (
-            <span style={{ marginLeft: 6, opacity: 0.5 }}>›</span>
+            <ChevronRight size={14} strokeWidth={2} style={{ marginLeft: 4, opacity: 0.4 }} />
           )}
         </span>
       )}
@@ -218,12 +219,29 @@ export default function SettingsPage() {
               }}
             >
               <div style={{ textAlign: 'center', marginBottom: 24 }}>
-                <div style={{ fontSize: 40, marginBottom: 12 }}>⚠️</div>
-                <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 8px 0' }}>
+                <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'center' }}>
+                  <AlertTriangle size={40} color="#e05a5a" strokeWidth={1.75} />
+                </div>
+                <h3
+                  style={{
+                    fontSize: 18,
+                    fontWeight: 700,
+                    color: 'var(--text-primary)',
+                    margin: '0 0 8px 0',
+                  }}
+                >
                   Reset all data?
                 </h3>
-                <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0 }}>
-                  This will permanently delete your taper plan, all dose history, milestones, and settings. This cannot be undone.
+                <p
+                  style={{
+                    fontSize: 14,
+                    color: 'var(--text-secondary)',
+                    lineHeight: 1.5,
+                    margin: 0,
+                  }}
+                >
+                  This will permanently delete your taper plan, all dose history, milestones, and
+                  settings. This cannot be undone.
                 </p>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -289,7 +307,10 @@ export default function SettingsPage() {
               boxShadow: '0 8px 32px rgba(127,176,105,0.35)',
             }}
           >
-            ✓ Data exported successfully
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+              <Check size={16} strokeWidth={2.5} />
+              Data exported successfully
+            </span>
           </motion.div>
         )}
       </AnimatePresence>
@@ -316,12 +337,11 @@ export default function SettingsPage() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: 18,
                 flexShrink: 0,
               }}
               aria-label="Go back"
             >
-              ←
+              <ArrowLeft size={18} strokeWidth={2} />
             </button>
             <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
               Settings
@@ -426,8 +446,16 @@ export default function SettingsPage() {
             )}
             {permission === 'denied' && (
               <div style={{ padding: '0 16px 14px' }}>
-                <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0, lineHeight: 1.4 }}>
-                  Notifications are blocked. To enable them, go to your browser or phone settings and allow notifications for this site.
+                <p
+                  style={{
+                    fontSize: 13,
+                    color: 'var(--text-secondary)',
+                    margin: 0,
+                    lineHeight: 1.4,
+                  }}
+                >
+                  Notifications are blocked. To enable them, go to your browser or phone settings
+                  and allow notifications for this site.
                 </p>
               </div>
             )}
@@ -449,19 +477,15 @@ export default function SettingsPage() {
                 />
                 <Row
                   label="Goal dose"
-                  value={taperPlan.targetAmount === 0 ? 'Zero (quit)' : formatGrams(taperPlan.targetAmount)}
+                  value={
+                    taperPlan.targetAmount === 0
+                      ? 'Zero (quit)'
+                      : formatGrams(taperPlan.targetAmount)
+                  }
                   noBorder={false}
                 />
-                <Row
-                  label="Timeline"
-                  value={`${taperPlan.weeksToTarget} weeks`}
-                  noBorder={false}
-                />
-                <Row
-                  label="Day in journey"
-                  value={`Day ${daysSince + 1}`}
-                  noBorder={false}
-                />
+                <Row label="Timeline" value={`${taperPlan.weeksToTarget} weeks`} noBorder={false} />
+                <Row label="Day in journey" value={`Day ${daysSince + 1}`} noBorder={false} />
                 <Row
                   label="Started"
                   value={format(new Date(taperPlan.startDate), 'MMM d, yyyy')}
@@ -484,15 +508,26 @@ export default function SettingsPage() {
               }}
               onClick={exportData}
             >
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+              >
                 <span style={{ fontSize: 15, color: 'var(--text-primary)', fontWeight: 500 }}>
                   Export my data
                 </span>
                 <span style={{ fontSize: 14, color: 'var(--text-secondary)' }}>
-                  JSON <span style={{ opacity: 0.5 }}>›</span>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                    JSON <ChevronRight size={13} strokeWidth={2} style={{ opacity: 0.4 }} />
+                  </span>
                 </span>
               </div>
-              <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '4px 0 0 0', lineHeight: 1.4 }}>
+              <p
+                style={{
+                  fontSize: 12,
+                  color: 'var(--text-secondary)',
+                  margin: '4px 0 0 0',
+                  lineHeight: 1.4,
+                }}
+              >
                 Download all your dose history, plan, and settings
               </p>
             </div>
@@ -506,7 +541,14 @@ export default function SettingsPage() {
               <span style={{ fontSize: 15, color: '#e05a5a', fontWeight: 500 }}>
                 Reset all data
               </span>
-              <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '4px 0 0 0', lineHeight: 1.4 }}>
+              <p
+                style={{
+                  fontSize: 12,
+                  color: 'var(--text-secondary)',
+                  margin: '4px 0 0 0',
+                  lineHeight: 1.4,
+                }}
+              >
                 Delete your plan, history, and all settings
               </p>
             </div>
@@ -516,11 +558,7 @@ export default function SettingsPage() {
           <Section title="About">
             <Row label="App" value="Unhookd" noBorder={false} />
             <Row label="Version" value="1.0.0" noBorder={false} />
-            <Row
-              label="Purpose"
-              value="Gentle taper tracking"
-              noBorder
-            />
+            <Row label="Purpose" value="Gentle taper tracking" noBorder />
           </Section>
 
           <p
@@ -532,7 +570,8 @@ export default function SettingsPage() {
               fontStyle: 'italic',
             }}
           >
-            Your logs are stored on this device. Anonymous usage data — no name, email, or identifying information — is shared to help understand what supports kratom recovery.
+            Your logs are stored on this device. Anonymous usage data — no name, email, or
+            identifying information — is shared to help understand what supports kratom recovery.
           </p>
         </motion.div>
       </div>

@@ -8,6 +8,7 @@ import { useFirestore } from '@/hooks/useFirestore'
 import { useNotifications } from '@/hooks/useNotifications'
 import { formatGrams, getDailyTargetForDate, getTodayKey, dateToKey } from '@/lib/utils'
 import { TaperTrajectoryChart } from '@/components/TaperTrajectoryChart'
+import { Pencil, Check, ChevronUp, ChevronDown } from 'lucide-react'
 
 export default function PlanPage() {
   const router = useRouter()
@@ -15,6 +16,7 @@ export default function PlanPage() {
   const { updatePlan } = useFirestore()
   const { permission, reminderTime, setReminderTime, requestPermission } = useNotifications()
 
+  const [mode, setMode] = useState<'overview' | 'edit'>(taperPlan ? 'overview' : 'edit')
   const [startAmount, setStartAmount] = useState(taperPlan?.startAmount ?? 8)
   const [targetAmount, setTargetAmount] = useState(taperPlan?.targetAmount ?? 0)
   const [weeksToTarget, setWeeksToTarget] = useState(taperPlan?.weeksToTarget ?? 12)
@@ -33,6 +35,17 @@ export default function PlanPage() {
       setLocalReminderTime(reminderTime)
     }
   }, [reminderTime])
+
+  useEffect(() => {
+    if (taperPlan) {
+      setStartAmount(taperPlan.startAmount)
+      setTargetAmount(taperPlan.targetAmount)
+      setWeeksToTarget(taperPlan.weeksToTarget)
+      setReasons(taperPlan.reasons ?? '')
+      setContactName(taperPlan.emergencyContact?.name ?? '')
+      setContactPhone(taperPlan.emergencyContact?.phone ?? '')
+    }
+  }, [taperPlan])
 
   async function handleToggleReminder() {
     if (!reminderEnabled) {
@@ -53,23 +66,10 @@ export default function PlanPage() {
     if (reminderEnabled) setReminderTime(time)
   }
 
-  useEffect(() => {
-    if (taperPlan) {
-      setStartAmount(taperPlan.startAmount)
-      setTargetAmount(taperPlan.targetAmount)
-      setWeeksToTarget(taperPlan.weeksToTarget)
-      setReasons(taperPlan.reasons ?? '')
-      setContactName(taperPlan.emergencyContact?.name ?? '')
-      setContactPhone(taperPlan.emergencyContact?.phone ?? '')
-    }
-  }, [taperPlan])
-
-  // Build weekly schedule preview
   const weeklySchedule = (() => {
     const steps = []
     const totalDays = weeksToTarget * 7
     const reduction = startAmount - targetAmount
-
     for (let week = 0; week <= Math.min(weeksToTarget, 12); week++) {
       const day = week * 7
       const dailyTarget =
@@ -88,7 +88,6 @@ export default function PlanPage() {
   async function handleSave() {
     if (isSaving) return
     setIsSaving(true)
-
     const plan: TaperPlan = {
       startAmount,
       targetAmount,
@@ -100,7 +99,6 @@ export default function PlanPage() {
         ? { name: contactName.trim(), phone: contactPhone.trim() }
         : undefined,
     }
-
     try {
       await updatePlan(plan)
       setSaved(true)
@@ -119,19 +117,15 @@ export default function PlanPage() {
     setIsHolding(true)
     const today = new Date()
     const holdEnd = new Date(today)
-    holdEnd.setDate(holdEnd.getDate() + 6) // 7 days inclusive of today
-    await updatePlan({
-      ...taperPlan,
-      holdStartDate: getTodayKey(),
-      holdUntil: dateToKey(holdEnd),
-    })
+    holdEnd.setDate(holdEnd.getDate() + 6)
+    await updatePlan({ ...taperPlan, holdStartDate: getTodayKey(), holdUntil: dateToKey(holdEnd) })
     setIsHolding(false)
   }
 
   async function handleResumeHold() {
     if (!taperPlan || isHolding) return
     setIsHolding(true)
-    const { holdUntil: _holdUntil, holdStartDate: _holdStartDate, ...rest } = taperPlan
+    const { holdUntil: _h, holdStartDate: _s, ...rest } = taperPlan
     await updatePlan(rest)
     setIsHolding(false)
   }
@@ -139,74 +133,492 @@ export default function PlanPage() {
   const holdIsActive = !!(
     taperPlan?.holdUntil && new Date(taperPlan.holdUntil) >= new Date(getTodayKey())
   )
-
   const weeklyReduction = weeksToTarget > 0 ? (startAmount - targetAmount) / weeksToTarget : 0
+
+  if (saved) {
+    return (
+      <div className="page-container" style={{ paddingTop: 24, paddingBottom: 24 }}>
+        <motion.div
+          key="saved"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '80px 24px',
+            gap: 16,
+            textAlign: 'center',
+          }}
+        >
+          <div
+            style={{
+              width: 80,
+              height: 80,
+              borderRadius: '50%',
+              backgroundColor: 'rgba(232,168,124,0.15)',
+              border: '2px solid var(--primary)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Check size={36} color="var(--primary)" strokeWidth={2.5} />
+          </div>
+          <h2 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+            Plan saved!
+          </h2>
+          <p style={{ color: 'var(--text-secondary)', fontSize: 15, margin: 0, lineHeight: 1.5 }}>
+            Your taper schedule is set. Take it one day at a time.
+          </p>
+        </motion.div>
+      </div>
+    )
+  }
 
   return (
     <div className="page-container" style={{ paddingTop: 24, paddingBottom: 24 }}>
       <AnimatePresence mode="wait">
-        {saved ? (
+        {mode === 'overview' && taperPlan ? (
           <motion.div
-            key="saved"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '80px 24px',
-              gap: 16,
-              textAlign: 'center',
-            }}
+            key="overview"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            style={{ display: 'flex', flexDirection: 'column', gap: 20 }}
           >
+            {/* Header */}
+            <div
+              style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}
+            >
+              <div>
+                <h1
+                  style={{
+                    fontSize: 26,
+                    fontWeight: 700,
+                    color: 'var(--text-primary)',
+                    margin: '0 0 4px 0',
+                  }}
+                >
+                  My plan
+                </h1>
+                <p style={{ fontSize: 14, color: 'var(--text-secondary)', margin: 0 }}>
+                  {formatGrams(taperPlan.startAmount)} →{' '}
+                  {taperPlan.targetAmount === 0 ? 'zero' : formatGrams(taperPlan.targetAmount)} over{' '}
+                  {taperPlan.weeksToTarget} weeks
+                </p>
+              </div>
+              <button
+                onClick={() => setMode('edit')}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  height: 36,
+                  padding: '0 14px',
+                  borderRadius: 10,
+                  backgroundColor: 'var(--surface)',
+                  border: '1px solid var(--border)',
+                  color: 'var(--text-secondary)',
+                  fontSize: 13,
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                }}
+              >
+                <Pencil size={13} strokeWidth={2} />
+                Edit
+              </button>
+            </div>
+
+            {/* Hold mode — prominent at top */}
             <div
               style={{
-                width: 80,
-                height: 80,
-                borderRadius: '50%',
-                backgroundColor: 'rgba(232,168,124,0.15)',
-                border: '2px solid var(--primary)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: 36,
+                backgroundColor: holdIsActive ? 'rgba(232,168,124,0.08)' : 'var(--surface)',
+                borderRadius: 20,
+                padding: 20,
+                border: `1px solid ${holdIsActive ? 'rgba(232,168,124,0.3)' : 'var(--border)'}`,
               }}
             >
-              ✓
+              {holdIsActive ? (
+                <>
+                  <p
+                    style={{
+                      fontSize: 15,
+                      fontWeight: 600,
+                      color: 'var(--primary)',
+                      margin: '0 0 4px 0',
+                    }}
+                  >
+                    Hold active until{' '}
+                    {new Date(taperPlan.holdUntil!).toLocaleDateString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                    })}
+                  </p>
+                  <p
+                    style={{
+                      fontSize: 13,
+                      color: 'var(--text-secondary)',
+                      margin: '0 0 14px 0',
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    Taper paused at {formatGrams(getDailyTargetForDate(taperPlan, new Date()))}{' '}
+                    until then. Rest and recover.
+                  </p>
+                  <button
+                    onClick={handleResumeHold}
+                    disabled={isHolding}
+                    style={{
+                      width: '100%',
+                      padding: '11px',
+                      borderRadius: 12,
+                      backgroundColor: 'transparent',
+                      color: 'var(--text-secondary)',
+                      fontWeight: 600,
+                      fontSize: 14,
+                      border: '1px solid var(--border)',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {isHolding ? 'Updating...' : 'Resume taper now'}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <p
+                    style={{
+                      fontSize: 15,
+                      fontWeight: 600,
+                      color: 'var(--text-primary)',
+                      margin: '0 0 4px 0',
+                    }}
+                  >
+                    Need a breather?
+                  </p>
+                  <p
+                    style={{
+                      fontSize: 13,
+                      color: 'var(--text-secondary)',
+                      margin: '0 0 14px 0',
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    Hold at your current dose for 7 days, then resume automatically. No shame in
+                    rest.
+                  </p>
+                  <button
+                    onClick={handleHold}
+                    disabled={isHolding}
+                    style={{
+                      width: '100%',
+                      padding: '11px',
+                      borderRadius: 12,
+                      backgroundColor: 'rgba(232,168,124,0.1)',
+                      color: 'var(--primary)',
+                      fontWeight: 600,
+                      fontSize: 14,
+                      border: '1px solid rgba(232,168,124,0.3)',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {isHolding ? 'Setting hold...' : 'Hold for 7 days'}
+                  </button>
+                </>
+              )}
             </div>
-            <h2 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-              Plan saved!
-            </h2>
-            <p style={{ color: 'var(--text-secondary)', fontSize: 15, margin: 0, lineHeight: 1.5 }}>
-              Your taper schedule is set. Take it one day at a time.
-            </p>
+
+            {/* Today's target */}
+            <div
+              style={{
+                display: 'flex',
+                gap: 10,
+              }}
+            >
+              <div
+                style={{
+                  flex: 1,
+                  backgroundColor: 'var(--surface)',
+                  borderRadius: 16,
+                  padding: '16px',
+                  border: '1px solid var(--border)',
+                  textAlign: 'center',
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: 11,
+                    color: 'var(--text-secondary)',
+                    fontWeight: 600,
+                    letterSpacing: '0.05em',
+                    textTransform: 'uppercase',
+                    marginBottom: 6,
+                  }}
+                >
+                  Today&apos;s target
+                </div>
+                <div
+                  style={{ fontSize: 28, fontWeight: 800, color: 'var(--primary)', lineHeight: 1 }}
+                >
+                  {formatGrams(getDailyTargetForDate(taperPlan, new Date()))}
+                </div>
+              </div>
+              <div
+                style={{
+                  flex: 1,
+                  backgroundColor: 'var(--surface)',
+                  borderRadius: 16,
+                  padding: '16px',
+                  border: '1px solid var(--border)',
+                  textAlign: 'center',
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: 11,
+                    color: 'var(--text-secondary)',
+                    fontWeight: 600,
+                    letterSpacing: '0.05em',
+                    textTransform: 'uppercase',
+                    marginBottom: 6,
+                  }}
+                >
+                  Weekly drop
+                </div>
+                <div
+                  style={{
+                    fontSize: 28,
+                    fontWeight: 800,
+                    color: 'var(--text-primary)',
+                    lineHeight: 1,
+                  }}
+                >
+                  {formatGrams(Math.round(weeklyReduction * 10) / 10)}
+                </div>
+              </div>
+              <div
+                style={{
+                  flex: 1,
+                  backgroundColor: 'var(--surface)',
+                  borderRadius: 16,
+                  padding: '16px',
+                  border: '1px solid var(--border)',
+                  textAlign: 'center',
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: 11,
+                    color: 'var(--text-secondary)',
+                    fontWeight: 600,
+                    letterSpacing: '0.05em',
+                    textTransform: 'uppercase',
+                    marginBottom: 6,
+                  }}
+                >
+                  Goal
+                </div>
+                <div
+                  style={{ fontSize: 28, fontWeight: 800, color: 'var(--success)', lineHeight: 1 }}
+                >
+                  {taperPlan.targetAmount === 0 ? '0g' : formatGrams(taperPlan.targetAmount)}
+                </div>
+              </div>
+            </div>
+
+            {/* Trajectory chart */}
+            <TaperTrajectoryChart plan={taperPlan} />
+
+            {/* Reminders */}
+            {permission !== 'unsupported' && (
+              <div
+                style={{
+                  backgroundColor: 'var(--surface)',
+                  borderRadius: 20,
+                  padding: 20,
+                  border: '1px solid var(--border)',
+                }}
+              >
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: reminderEnabled ? 16 : 0,
+                  }}
+                >
+                  <div>
+                    <p
+                      style={{
+                        fontSize: 15,
+                        fontWeight: 600,
+                        color: 'var(--text-primary)',
+                        margin: '0 0 2px 0',
+                      }}
+                    >
+                      Daily reminder
+                    </p>
+                    <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: 0 }}>
+                      {permission === 'denied'
+                        ? 'Notifications blocked — enable in browser settings'
+                        : 'Gentle nudge to log your dose'}
+                    </p>
+                  </div>
+                  <button
+                    onClick={handleToggleReminder}
+                    disabled={permission === 'denied'}
+                    style={{
+                      width: 48,
+                      height: 28,
+                      borderRadius: 14,
+                      backgroundColor: reminderEnabled ? 'var(--primary)' : 'var(--border)',
+                      border: 'none',
+                      position: 'relative',
+                      flexShrink: 0,
+                      transition: 'background-color 0.2s ease',
+                      opacity: permission === 'denied' ? 0.4 : 1,
+                      cursor: permission === 'denied' ? 'not-allowed' : 'pointer',
+                    }}
+                  >
+                    <span
+                      style={{
+                        position: 'absolute',
+                        top: 3,
+                        left: reminderEnabled ? 23 : 3,
+                        width: 22,
+                        height: 22,
+                        borderRadius: '50%',
+                        backgroundColor: 'white',
+                        transition: 'left 0.2s ease',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+                      }}
+                    />
+                  </button>
+                </div>
+                {reminderEnabled && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                  >
+                    <label
+                      style={{
+                        fontSize: 12,
+                        color: 'var(--text-secondary)',
+                        display: 'block',
+                        marginBottom: 8,
+                      }}
+                    >
+                      Remind me at
+                    </label>
+                    <input
+                      type="time"
+                      value={localReminderTime}
+                      onChange={(e) => handleReminderTimeChange(e.target.value)}
+                      style={{
+                        width: '100%',
+                        height: 44,
+                        padding: '0 12px',
+                        borderRadius: 12,
+                        fontSize: 16,
+                        backgroundColor: 'var(--surface-elevated)',
+                        color: 'var(--text-primary)',
+                        border: '1px solid var(--border)',
+                      }}
+                    />
+                  </motion.div>
+                )}
+              </div>
+            )}
+
+            {/* Reasons (read-only) */}
+            {taperPlan.reasons && (
+              <div
+                style={{
+                  backgroundColor: 'var(--surface)',
+                  borderRadius: 16,
+                  padding: '14px 16px',
+                  border: '1px solid var(--border)',
+                }}
+              >
+                <p
+                  style={{
+                    fontSize: 11,
+                    color: 'var(--text-secondary)',
+                    fontWeight: 600,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                    margin: '0 0 8px 0',
+                  }}
+                >
+                  Why you&apos;re doing this
+                </p>
+                <p
+                  style={{
+                    fontSize: 14,
+                    color: 'var(--text-primary)',
+                    margin: 0,
+                    lineHeight: 1.6,
+                    fontStyle: 'italic',
+                  }}
+                >
+                  &ldquo;{taperPlan.reasons}&rdquo;
+                </p>
+              </div>
+            )}
           </motion.div>
         ) : (
           <motion.div
-            key="form"
+            key="edit"
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
             style={{ display: 'flex', flexDirection: 'column', gap: 24 }}
           >
             {/* Header */}
-            <div>
-              <h1
-                style={{
-                  fontSize: 26,
-                  fontWeight: 700,
-                  color: 'var(--text-primary)',
-                  margin: '0 0 6px 0',
-                }}
-              >
-                {taperPlan ? 'Update your plan' : 'Create your plan'}
-              </h1>
-              <p
-                style={{ fontSize: 14, color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}
-              >
-                A realistic taper is kinder to your body and more likely to succeed. Go at your
-                pace.
-              </p>
+            <div
+              style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}
+            >
+              <div>
+                <h1
+                  style={{
+                    fontSize: 26,
+                    fontWeight: 700,
+                    color: 'var(--text-primary)',
+                    margin: '0 0 6px 0',
+                  }}
+                >
+                  {taperPlan ? 'Edit your plan' : 'Create your plan'}
+                </h1>
+                <p
+                  style={{
+                    fontSize: 14,
+                    color: 'var(--text-secondary)',
+                    margin: 0,
+                    lineHeight: 1.5,
+                  }}
+                >
+                  A realistic taper is kinder to your body.
+                </p>
+              </div>
+              {taperPlan && (
+                <button
+                  onClick={() => setMode('overview')}
+                  style={{
+                    height: 36,
+                    padding: '0 14px',
+                    borderRadius: 10,
+                    backgroundColor: 'var(--surface)',
+                    border: '1px solid var(--border)',
+                    color: 'var(--text-secondary)',
+                    fontSize: 13,
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Cancel
+                </button>
+              )}
             </div>
 
             {/* Dose calculator */}
@@ -331,6 +743,18 @@ export default function PlanPage() {
                   ? 'Fully quit — a powerful goal. Take it at your pace.'
                   : `Reduce to ${formatGrams(targetAmount)}/day long-term`}
               </p>
+              {startAmount <= targetAmount && (
+                <p
+                  style={{
+                    fontSize: 12,
+                    color: 'var(--danger)',
+                    margin: '6px 0 0 0',
+                    fontWeight: 600,
+                  }}
+                >
+                  Goal must be less than starting amount
+                </p>
+              )}
             </div>
 
             {/* Timeline */}
@@ -465,116 +889,7 @@ export default function PlanPage() {
               </div>
             </div>
 
-            {/* Taper trajectory chart — only after plan exists */}
-            {taperPlan && (
-              <TaperTrajectoryChart
-                plan={{ ...taperPlan, startAmount, targetAmount, weeksToTarget }}
-              />
-            )}
-
-            {/* Reminders */}
-            {permission !== 'unsupported' && (
-              <div
-                style={{
-                  backgroundColor: 'var(--surface)',
-                  borderRadius: 20,
-                  padding: 20,
-                  border: '1px solid var(--border)',
-                }}
-              >
-                <div
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    marginBottom: reminderEnabled ? 16 : 0,
-                  }}
-                >
-                  <div>
-                    <p
-                      style={{
-                        fontSize: 15,
-                        fontWeight: 600,
-                        color: 'var(--text-primary)',
-                        margin: '0 0 2px 0',
-                      }}
-                    >
-                      Daily reminder
-                    </p>
-                    <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: 0 }}>
-                      {permission === 'denied'
-                        ? 'Notifications blocked — enable in browser settings'
-                        : 'Get a gentle nudge to log your dose'}
-                    </p>
-                  </div>
-                  <button
-                    onClick={handleToggleReminder}
-                    disabled={permission === 'denied'}
-                    style={{
-                      width: 48,
-                      height: 28,
-                      borderRadius: 14,
-                      backgroundColor: reminderEnabled ? 'var(--primary)' : 'var(--border)',
-                      border: 'none',
-                      position: 'relative',
-                      flexShrink: 0,
-                      transition: 'background-color 0.2s ease',
-                      opacity: permission === 'denied' ? 0.4 : 1,
-                      cursor: permission === 'denied' ? 'not-allowed' : 'pointer',
-                    }}
-                  >
-                    <span
-                      style={{
-                        position: 'absolute',
-                        top: 3,
-                        left: reminderEnabled ? 23 : 3,
-                        width: 22,
-                        height: 22,
-                        borderRadius: '50%',
-                        backgroundColor: 'white',
-                        transition: 'left 0.2s ease',
-                        boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
-                      }}
-                    />
-                  </button>
-                </div>
-
-                {reminderEnabled && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                  >
-                    <label
-                      style={{
-                        fontSize: 12,
-                        color: 'var(--text-secondary)',
-                        display: 'block',
-                        marginBottom: 8,
-                      }}
-                    >
-                      Remind me at
-                    </label>
-                    <input
-                      type="time"
-                      value={localReminderTime}
-                      onChange={(e) => handleReminderTimeChange(e.target.value)}
-                      style={{
-                        width: '100%',
-                        height: 44,
-                        padding: '0 12px',
-                        borderRadius: 12,
-                        fontSize: 16,
-                        backgroundColor: 'var(--surface-elevated)',
-                        color: 'var(--text-primary)',
-                        border: '1px solid var(--border)',
-                      }}
-                    />
-                  </motion.div>
-                )}
-              </div>
-            )}
-
-            {/* Reasons — shown in craving modal */}
+            {/* Reasons */}
             <div
               style={{
                 backgroundColor: 'var(--surface)',
@@ -604,13 +919,13 @@ export default function PlanPage() {
                   lineHeight: 1.5,
                 }}
               >
-                Written to you, for when it gets hard. Shown inside the craving SOS.
+                Written to you, shown inside the craving SOS when it gets hard.
               </p>
               <textarea
                 value={reasons}
                 onChange={(e) => setReasons(e.target.value.slice(0, 280))}
                 placeholder={
-                  'e.g. "I want to be present for my kids. I\'m tired of planning my day around dosing. I want my mornings back."'
+                  'e.g. "I want to be present for my kids. I\'m tired of planning my day around dosing."'
                 }
                 rows={3}
                 style={{
@@ -670,8 +985,7 @@ export default function PlanPage() {
                   lineHeight: 1.5,
                 }}
               >
-                Someone to call when it gets really hard. Shown as a call button inside the craving
-                SOS.
+                Someone to call when it gets really hard. A call button in the craving SOS.
               </p>
               <div style={{ display: 'flex', gap: 10 }}>
                 <input
@@ -713,107 +1027,6 @@ export default function PlanPage() {
               </div>
             </div>
 
-            {/* Hold mode */}
-            {taperPlan && (
-              <div
-                style={{
-                  backgroundColor: holdIsActive ? 'rgba(232,168,124,0.08)' : 'var(--surface)',
-                  borderRadius: 20,
-                  padding: 20,
-                  border: `1px solid ${holdIsActive ? 'rgba(232,168,124,0.3)' : 'var(--border)'}`,
-                }}
-              >
-                {holdIsActive ? (
-                  <>
-                    <p
-                      style={{
-                        fontSize: 15,
-                        fontWeight: 600,
-                        color: 'var(--primary)',
-                        margin: '0 0 4px 0',
-                      }}
-                    >
-                      Hold active until{' '}
-                      {new Date(taperPlan.holdUntil!).toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                      })}
-                    </p>
-                    <p
-                      style={{
-                        fontSize: 13,
-                        color: 'var(--text-secondary)',
-                        margin: '0 0 14px 0',
-                        lineHeight: 1.5,
-                      }}
-                    >
-                      Your taper is paused at{' '}
-                      {formatGrams(getDailyTargetForDate(taperPlan, new Date()))} until then. Rest
-                      and recover.
-                    </p>
-                    <button
-                      onClick={handleResumeHold}
-                      disabled={isHolding}
-                      style={{
-                        width: '100%',
-                        padding: '11px',
-                        borderRadius: 12,
-                        backgroundColor: 'transparent',
-                        color: 'var(--text-secondary)',
-                        fontWeight: 600,
-                        fontSize: 14,
-                        border: '1px solid var(--border)',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      {isHolding ? 'Updating...' : 'Resume taper now'}
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <p
-                      style={{
-                        fontSize: 15,
-                        fontWeight: 600,
-                        color: 'var(--text-primary)',
-                        margin: '0 0 4px 0',
-                      }}
-                    >
-                      Need a breather?
-                    </p>
-                    <p
-                      style={{
-                        fontSize: 13,
-                        color: 'var(--text-secondary)',
-                        margin: '0 0 14px 0',
-                        lineHeight: 1.5,
-                      }}
-                    >
-                      Hold at your current dose for 7 days, then resume the taper automatically. No
-                      shame in taking a rest.
-                    </p>
-                    <button
-                      onClick={handleHold}
-                      disabled={isHolding}
-                      style={{
-                        width: '100%',
-                        padding: '11px',
-                        borderRadius: 12,
-                        backgroundColor: 'rgba(232,168,124,0.1)',
-                        color: 'var(--primary)',
-                        fontWeight: 600,
-                        fontSize: 14,
-                        border: '1px solid rgba(232,168,124,0.3)',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      {isHolding ? 'Setting hold...' : 'Hold for 7 days'}
-                    </button>
-                  </>
-                )}
-              </div>
-            )}
-
             {/* Save button */}
             <button
               onClick={handleSave}
@@ -821,31 +1034,19 @@ export default function PlanPage() {
               style={{
                 height: 56,
                 borderRadius: 16,
-                backgroundColor: 'var(--primary)',
-                color: 'var(--bg)',
+                backgroundColor:
+                  startAmount > targetAmount ? 'var(--primary)' : 'var(--surface-elevated)',
+                color: startAmount > targetAmount ? 'var(--bg)' : 'var(--text-secondary)',
                 fontWeight: 700,
                 fontSize: 17,
                 border: 'none',
                 transition: 'all 0.2s ease',
                 opacity: isSaving ? 0.7 : 1,
-                cursor: isSaving ? 'not-allowed' : 'pointer',
+                cursor: isSaving || startAmount <= targetAmount ? 'not-allowed' : 'pointer',
               }}
             >
               {isSaving ? 'Saving...' : taperPlan ? 'Update plan' : 'Start my journey'}
             </button>
-
-            {startAmount <= targetAmount && (
-              <p
-                style={{
-                  textAlign: 'center',
-                  fontSize: 13,
-                  color: 'var(--danger)',
-                  margin: '-16px 0 0 0',
-                }}
-              >
-                Goal amount must be less than starting amount
-              </p>
-            )}
           </motion.div>
         )}
       </AnimatePresence>
@@ -890,11 +1091,17 @@ function DoseCalculator({ onApply }: { onApply: (dailyLimit: number) => void }) 
         <div style={{ textAlign: 'left' }}>
           <p style={{ margin: 0, fontSize: 15, fontWeight: 600 }}>Calculate from what I have</p>
           <p style={{ margin: '2px 0 0 0', fontSize: 12, color: 'var(--text-secondary)' }}>
-            Know your grams remaining? Work backwards to a daily limit.
+            Know your grams remaining? Work backwards.
           </p>
         </div>
-        <span style={{ fontSize: 18, color: 'var(--text-secondary)', opacity: 0.6, flexShrink: 0 }}>
-          {open ? '▲' : '▼'}
+        <span
+          style={{ color: 'var(--text-secondary)', opacity: 0.6, flexShrink: 0, display: 'flex' }}
+        >
+          {open ? (
+            <ChevronUp size={18} strokeWidth={2} />
+          ) : (
+            <ChevronDown size={18} strokeWidth={2} />
+          )}
         </span>
       </button>
 
@@ -980,7 +1187,6 @@ function DoseCalculator({ onApply }: { onApply: (dailyLimit: number) => void }) 
                   />
                 </div>
               </div>
-
               {dailyLimit !== null && (
                 <motion.div
                   initial={{ opacity: 0, y: 4 }}

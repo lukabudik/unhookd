@@ -1,11 +1,30 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useAppStore } from '@/lib/store'
 import { getPastDates, dateToKey, getDailyTargetForDate, formatGrams } from '@/lib/utils'
 import { IntakeEntry } from '@/lib/store'
-import { Shield, Sunrise, Sun, Sunset, Moon, Smile, Meh, Frown, LucideIcon } from 'lucide-react'
+import {
+  Shield,
+  Sunrise,
+  Sun,
+  Sunset,
+  Moon,
+  Smile,
+  Meh,
+  Frown,
+  TrendingDown,
+  TrendingUp,
+  ArrowRight,
+  Clock,
+  Heart,
+  BrainCircuit,
+  Activity,
+  Stethoscope,
+  BarChart2,
+  LucideIcon,
+} from 'lucide-react'
 
 interface DaySnapshot {
   date: Date
@@ -14,8 +33,16 @@ interface DaySnapshot {
 }
 
 type SymptomLevel = 'fine' | 'mild' | 'bad'
-interface SymptomData { sleep?: SymptomLevel; anxiety?: SymptomLevel; restlessness?: SymptomLevel; gi?: SymptomLevel }
-interface DaySymptoms { date: Date; symptoms: SymptomData }
+interface SymptomData {
+  sleep?: SymptomLevel
+  anxiety?: SymptomLevel
+  restlessness?: SymptomLevel
+  gi?: SymptomLevel
+}
+interface DaySymptoms {
+  date: Date
+  symptoms: SymptomData
+}
 
 function loadSymptomData(days: number): DaySymptoms[] {
   if (typeof window === 'undefined') return []
@@ -78,7 +105,7 @@ interface InsightData {
   totalTimingEntries: number
   daysLogged: number
   totalReduction: number
-  avgVsTarget: number  // negative = under, positive = over
+  avgVsTarget: number // negative = under, positive = over
   snapshots14: DaySnapshot[]
   totalResistances14: number
   resistanceByDay14: { date: Date; count: number }[]
@@ -95,7 +122,7 @@ function StatCard({
 }: {
   label: string
   value: string
-  sub?: string
+  sub?: React.ReactNode
   accent?: string
   delay?: number
 }) {
@@ -113,14 +140,32 @@ function StatCard({
         minWidth: 0,
       }}
     >
-      <div style={{ fontSize: 11, color: 'var(--text-secondary)', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: 6 }}>
+      <div
+        style={{
+          fontSize: 11,
+          color: 'var(--text-secondary)',
+          fontWeight: 600,
+          letterSpacing: '0.05em',
+          textTransform: 'uppercase',
+          marginBottom: 6,
+        }}
+      >
         {label}
       </div>
-      <div style={{ fontSize: 26, fontWeight: 800, color: accent ?? 'var(--text-primary)', lineHeight: 1 }}>
+      <div
+        style={{
+          fontSize: 26,
+          fontWeight: 800,
+          color: accent ?? 'var(--text-primary)',
+          lineHeight: 1,
+        }}
+      >
         {value}
       </div>
       {sub && (
-        <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 4, lineHeight: 1.3 }}>
+        <div
+          style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 4, lineHeight: 1.3 }}
+        >
           {sub}
         </div>
       )}
@@ -128,19 +173,48 @@ function StatCard({
   )
 }
 
-function MoodBar({ label, MoodIcon, count, total, color }: { label: string; MoodIcon: LucideIcon; count: number; total: number; color: string }) {
+function MoodBar({
+  label,
+  MoodIcon,
+  count,
+  total,
+  color,
+}: {
+  label: string
+  MoodIcon: LucideIcon
+  count: number
+  total: number
+  color: string
+}) {
   const pct = total > 0 ? Math.round((count / total) * 100) : 0
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-      <div style={{ flexShrink: 0, width: 20, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div
+        style={{
+          flexShrink: 0,
+          width: 20,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
         <MoodIcon size={18} color={color} strokeWidth={1.75} />
       </div>
       <div style={{ flex: 1 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
           <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{label}</span>
-          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{pct}%</span>
+          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>
+            {pct}%
+          </span>
         </div>
-        <div style={{ height: 6, backgroundColor: 'var(--border)', borderRadius: 4, overflow: 'hidden' }}>
+        <div
+          style={{
+            height: 6,
+            backgroundColor: 'var(--border)',
+            borderRadius: 4,
+            overflow: 'hidden',
+          }}
+        >
           <motion.div
             initial={{ width: 0 }}
             animate={{ width: `${pct}%` }}
@@ -149,17 +223,33 @@ function MoodBar({ label, MoodIcon, count, total, color }: { label: string; Mood
           />
         </div>
       </div>
-      <span style={{ fontSize: 13, color: 'var(--text-secondary)', minWidth: 20, textAlign: 'right' }}>{count}</span>
+      <span
+        style={{ fontSize: 13, color: 'var(--text-secondary)', minWidth: 20, textAlign: 'right' }}
+      >
+        {count}
+      </span>
     </div>
   )
 }
 
-function TimingBubble({ label, Icon, count, max }: { label: string; Icon: LucideIcon; count: number; max: number }) {
+function TimingBubble({
+  label,
+  Icon,
+  count,
+  max,
+}: {
+  label: string
+  Icon: LucideIcon
+  count: number
+  max: number
+}) {
   const pct = max > 0 ? count / max : 0
   const size = 48 + pct * 32
   const iconSize = Math.round(18 + pct * 8)
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, flex: 1 }}>
+    <div
+      style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, flex: 1 }}
+    >
       <motion.div
         initial={{ scale: 0.5, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
@@ -175,7 +265,11 @@ function TimingBubble({ label, Icon, count, max }: { label: string; Icon: Lucide
           justifyContent: 'center',
         }}
       >
-        <Icon size={iconSize} color={count > 0 ? 'var(--primary)' : 'var(--text-secondary)'} strokeWidth={1.75} />
+        <Icon
+          size={iconSize}
+          color={count > 0 ? 'var(--primary)' : 'var(--text-secondary)'}
+          strokeWidth={1.75}
+        />
       </motion.div>
       <div style={{ textAlign: 'center' }}>
         <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)' }}>{count}</div>
@@ -196,7 +290,16 @@ function ResistanceBarChart({ data }: { data: { date: Date; count: number }[] })
           const isToday = i === data.length - 1
           const color = day.count > 0 ? 'var(--success)' : 'var(--border)'
           return (
-            <div key={dateToKey(day.date)} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+            <div
+              key={dateToKey(day.date)}
+              style={{
+                flex: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 4,
+              }}
+            >
               <motion.div
                 initial={{ height: 0 }}
                 animate={{ height: barH }}
@@ -219,7 +322,14 @@ function ResistanceBarChart({ data }: { data: { date: Date; count: number }[] })
           )
         })}
       </div>
-      <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 10, margin: '10px 0 0 0' }}>
+      <p
+        style={{
+          fontSize: 12,
+          color: 'var(--text-secondary)',
+          marginTop: 10,
+          margin: '10px 0 0 0',
+        }}
+      >
         {totalDaysWithResistances === 0
           ? 'Use the craving SOS button next time you feel an urge.'
           : `You resisted on ${totalDaysWithResistances} of the last 14 days — that willpower is real.`}
@@ -234,19 +344,21 @@ export default function InsightsPage() {
 
   useEffect(() => {
     const snapshots28 = loadDaySnapshots(28)
-    const snapshots14 = snapshots28.slice(14)  // last 14 days
-    const thisWeekSnaps = snapshots28.slice(21)  // last 7 days
-    const lastWeekSnaps = snapshots28.slice(14, 21)  // prev 7 days
+    const snapshots14 = snapshots28.slice(14) // last 14 days
+    const thisWeekSnaps = snapshots28.slice(21) // last 7 days
+    const lastWeekSnaps = snapshots28.slice(14, 21) // prev 7 days
 
     // Weekly averages (only counting logged days)
     const thisWeekLogged = thisWeekSnaps.filter((d) => d.total > 0)
     const lastWeekLogged = lastWeekSnaps.filter((d) => d.total > 0)
-    const thisWeekAvg = thisWeekLogged.length > 0
-      ? thisWeekLogged.reduce((s, d) => s + d.total, 0) / thisWeekLogged.length
-      : 0
-    const lastWeekAvg = lastWeekLogged.length > 0
-      ? lastWeekLogged.reduce((s, d) => s + d.total, 0) / lastWeekLogged.length
-      : 0
+    const thisWeekAvg =
+      thisWeekLogged.length > 0
+        ? thisWeekLogged.reduce((s, d) => s + d.total, 0) / thisWeekLogged.length
+        : 0
+    const lastWeekAvg =
+      lastWeekLogged.length > 0
+        ? lastWeekLogged.reduce((s, d) => s + d.total, 0) / lastWeekLogged.length
+        : 0
 
     // Mood breakdown (last 14 days)
     const moodCounts: Record<Mood, number> = { rough: 0, okay: 0, good: 0 }
@@ -302,11 +414,16 @@ export default function InsightsPage() {
     const symptomData14 = loadSymptomData(14)
 
     // Movement days (last 14 days)
-    const movementDays14 = getPastDates(14).filter(date => {
+    const movementDays14 = getPastDates(14).filter((date) => {
       const key = dateToKey(date)
-      const raw = typeof window !== 'undefined' ? localStorage.getItem(`unhookd_checkin_${key}`) : null
+      const raw =
+        typeof window !== 'undefined' ? localStorage.getItem(`unhookd_checkin_${key}`) : null
       if (!raw) return false
-      try { return JSON.parse(raw)?.moved === true } catch { return false }
+      try {
+        return JSON.parse(raw)?.moved === true
+      } catch {
+        return false
+      }
     }).length
 
     setData({
@@ -338,9 +455,10 @@ export default function InsightsPage() {
   }
 
   const weekDelta = data.lastWeekAvg > 0 ? data.thisWeekAvg - data.lastWeekAvg : null
-  const weekDeltaPct = weekDelta !== null && data.lastWeekAvg > 0
-    ? Math.abs(Math.round((weekDelta / data.lastWeekAvg) * 100))
-    : null
+  const weekDeltaPct =
+    weekDelta !== null && data.lastWeekAvg > 0
+      ? Math.abs(Math.round((weekDelta / data.lastWeekAvg) * 100))
+      : null
 
   const maxTiming = Math.max(...Object.values(data.timing))
 
@@ -350,6 +468,93 @@ export default function InsightsPage() {
     const target = getDailyTargetForDate(taperPlan, snap.date)
     return snap.total <= target
   }).length
+
+  // Build 3 plain-language insight cards
+  const insightCards = (() => {
+    const cards: { Icon: LucideIcon; headline: string; body: string }[] = []
+
+    // Trend insight
+    if (weekDelta !== null && weekDeltaPct !== null) {
+      if (weekDelta < -0.2) {
+        cards.push({
+          Icon: TrendingDown,
+          headline: `Down ${weekDeltaPct}% this week`,
+          body: `Your average this week is ${formatGrams(Math.round(data.thisWeekAvg * 10) / 10)} vs ${formatGrams(Math.round(data.lastWeekAvg * 10) / 10)} last week. The taper is working.`,
+        })
+      } else if (weekDelta > 0.2) {
+        cards.push({
+          Icon: TrendingUp,
+          headline: `Up ${weekDeltaPct}% this week`,
+          body: `This week's average is a bit higher than last week. Consider whether a hold week would help.`,
+        })
+      } else {
+        cards.push({
+          Icon: ArrowRight,
+          headline: 'Holding steady',
+          body: 'This week looks similar to last week — consistency is progress too.',
+        })
+      }
+    }
+
+    // Timing insight
+    if (data.totalTimingEntries > 0) {
+      const peak = (Object.entries(data.timing) as [TimeSlot, number][]).reduce((a, b) =>
+        b[1] > a[1] ? b : a
+      )
+      if (peak[1] > 0) {
+        const labels: Record<TimeSlot, string> = {
+          morning: 'mornings',
+          afternoon: 'afternoons',
+          evening: 'evenings',
+          night: 'nights',
+        }
+        const tips: Record<TimeSlot, string> = {
+          morning: 'Morning doses can set the tone for the day. Try a brief walk first.',
+          afternoon: 'Afternoon cravings often follow stress. A 10-min break can help.',
+          evening: 'Evening doses can affect sleep quality. Watch for the pattern.',
+          night: 'Late doses may be affecting your sleep. Try moving the last dose earlier.',
+        }
+        if (cards.length < 3) {
+          cards.push({
+            Icon: Clock,
+            headline: `You dose most in the ${labels[peak[0]]}`,
+            body: tips[peak[0]],
+          })
+        }
+      }
+    }
+
+    // Mood insight
+    if (data.totalMoodEntries >= 3) {
+      if (cards.length < 3) {
+        if (data.moodCounts.good > data.moodCounts.rough) {
+          const goodPct = Math.round((data.moodCounts.good / data.totalMoodEntries) * 100)
+          cards.push({
+            Icon: Smile,
+            headline: `${goodPct}% of doses logged feeling good`,
+            body: 'More good moments than rough ones — real progress that deserves recognition.',
+          })
+        } else if (data.moodCounts.rough > data.moodCounts.good) {
+          cards.push({
+            Icon: Heart,
+            headline: 'More rough days than good lately',
+            body: 'This is normal during a taper. The symptoms are temporary — your body is adjusting.',
+          })
+        }
+      }
+    }
+
+    // Resistance insight
+    if (data.totalResistances14 > 0 && cards.length < 3) {
+      cards.push({
+        Icon: Shield,
+        headline: `${data.totalResistances14} craving${data.totalResistances14 !== 1 ? 's' : ''} resisted`,
+        body: 'Every craving you ride out weakens the pattern. That willpower compounds.',
+      })
+    }
+
+    return cards.slice(0, 3)
+  })()
 
   return (
     <div className="page-container" style={{ paddingTop: 24, paddingBottom: 24 }}>
@@ -361,7 +566,14 @@ export default function InsightsPage() {
       >
         {/* Header */}
         <div>
-          <h1 style={{ fontSize: 26, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 4px 0' }}>
+          <h1
+            style={{
+              fontSize: 26,
+              fontWeight: 700,
+              color: 'var(--text-primary)',
+              margin: '0 0 4px 0',
+            }}
+          >
             Insights
           </h1>
           <p style={{ fontSize: 14, color: 'var(--text-secondary)', margin: 0 }}>
@@ -369,19 +581,89 @@ export default function InsightsPage() {
           </p>
         </div>
 
+        {/* Plain-language insight cards */}
+        {insightCards.length > 0 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {insightCards.map((card, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.07, duration: 0.3 }}
+                style={{
+                  backgroundColor: 'var(--surface)',
+                  borderRadius: 16,
+                  padding: '14px 16px',
+                  border: '1px solid var(--border)',
+                  display: 'flex',
+                  gap: 12,
+                  alignItems: 'flex-start',
+                }}
+              >
+                <div
+                  style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: 10,
+                    flexShrink: 0,
+                    backgroundColor: 'rgba(232,168,124,0.12)',
+                    border: '1px solid rgba(232,168,124,0.2)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <card.Icon size={18} color="var(--primary)" strokeWidth={1.75} />
+                </div>
+                <div>
+                  <p
+                    style={{
+                      margin: '0 0 3px 0',
+                      fontSize: 14,
+                      fontWeight: 700,
+                      color: 'var(--text-primary)',
+                      lineHeight: 1.2,
+                    }}
+                  >
+                    {card.headline}
+                  </p>
+                  <p
+                    style={{
+                      margin: 0,
+                      fontSize: 12,
+                      color: 'var(--text-secondary)',
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    {card.body}
+                  </p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        )}
+
         {/* Top stat row */}
         <div style={{ display: 'flex', gap: 10 }}>
           <StatCard
             label="This week avg"
             value={data.thisWeekAvg > 0 ? formatGrams(Math.round(data.thisWeekAvg * 10) / 10) : '—'}
             sub={
-              weekDelta !== null && weekDeltaPct !== null
-                ? weekDelta < 0
-                  ? `↓ ${weekDeltaPct}% vs last week`
-                  : weekDelta > 0
-                  ? `↑ ${weekDeltaPct}% vs last week`
-                  : 'Same as last week'
-                : data.lastWeekAvg === 0 ? 'No prior week data' : undefined
+              weekDelta !== null && weekDeltaPct !== null ? (
+                weekDelta < 0 ? (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                    <TrendingDown size={12} strokeWidth={2} /> {weekDeltaPct}% vs last week
+                  </span>
+                ) : weekDelta > 0 ? (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                    <TrendingUp size={12} strokeWidth={2} /> {weekDeltaPct}% vs last week
+                  </span>
+                ) : (
+                  'Same as last week'
+                )
+              ) : data.lastWeekAvg === 0 ? (
+                'No prior week data'
+              ) : undefined
             }
             accent={weekDelta !== null && weekDelta < 0 ? 'var(--success)' : 'var(--primary)'}
             delay={0.05}
@@ -408,7 +690,13 @@ export default function InsightsPage() {
             label="Movement days"
             value={`${data.movementDays14}/14`}
             sub="last 14 days"
-            accent={data.movementDays14 >= 10 ? 'var(--success)' : data.movementDays14 >= 5 ? 'var(--primary)' : 'var(--text-primary)'}
+            accent={
+              data.movementDays14 >= 10
+                ? 'var(--success)'
+                : data.movementDays14 >= 5
+                  ? 'var(--primary)'
+                  : 'var(--text-primary)'
+            }
             delay={0.17}
           />
         </div>
@@ -446,22 +734,40 @@ export default function InsightsPage() {
               border: '1px solid var(--border)',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-              <h2 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)', margin: 0, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: 16,
+              }}
+            >
+              <h2
+                style={{
+                  fontSize: 14,
+                  fontWeight: 600,
+                  color: 'var(--text-secondary)',
+                  margin: 0,
+                  letterSpacing: '0.04em',
+                  textTransform: 'uppercase',
+                }}
+              >
                 Cravings resisted
               </h2>
-              <div style={{
-                backgroundColor: 'rgba(127, 176, 105, 0.12)',
-                border: '1px solid rgba(127, 176, 105, 0.3)',
-                borderRadius: 20,
-                padding: '4px 12px',
-                fontSize: 13,
-                fontWeight: 700,
-                color: 'var(--success)',
-              }}>
+              <div
+                style={{
+                  backgroundColor: 'rgba(127, 176, 105, 0.12)',
+                  border: '1px solid rgba(127, 176, 105, 0.3)',
+                  borderRadius: 20,
+                  padding: '4px 12px',
+                  fontSize: 13,
+                  fontWeight: 700,
+                  color: 'var(--success)',
+                }}
+              >
                 <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <Shield size={14} strokeWidth={2} /> {data.totalResistances14} total
-              </span>
+                  <Shield size={14} strokeWidth={2} /> {data.totalResistances14} total
+                </span>
               </div>
             </div>
             <ResistanceBarChart data={data.resistanceByDay14} />
@@ -481,16 +787,51 @@ export default function InsightsPage() {
               border: '1px solid var(--border)',
             }}
           >
-            <h2 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)', margin: '0 0 16px 0', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+            <h2
+              style={{
+                fontSize: 14,
+                fontWeight: 600,
+                color: 'var(--text-secondary)',
+                margin: '0 0 16px 0',
+                letterSpacing: '0.04em',
+                textTransform: 'uppercase',
+              }}
+            >
               Mood (last 14 days)
             </h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <MoodBar label="Feeling good" MoodIcon={Smile} count={data.moodCounts.good} total={data.totalMoodEntries} color="var(--success)" />
-              <MoodBar label="Getting by" MoodIcon={Meh} count={data.moodCounts.okay} total={data.totalMoodEntries} color="var(--primary)" />
-              <MoodBar label="Rough days" MoodIcon={Frown} count={data.moodCounts.rough} total={data.totalMoodEntries} color="var(--danger)" />
+              <MoodBar
+                label="Feeling good"
+                MoodIcon={Smile}
+                count={data.moodCounts.good}
+                total={data.totalMoodEntries}
+                color="var(--success)"
+              />
+              <MoodBar
+                label="Getting by"
+                MoodIcon={Meh}
+                count={data.moodCounts.okay}
+                total={data.totalMoodEntries}
+                color="var(--primary)"
+              />
+              <MoodBar
+                label="Rough days"
+                MoodIcon={Frown}
+                count={data.moodCounts.rough}
+                total={data.totalMoodEntries}
+                color="var(--danger)"
+              />
             </div>
             {data.moodCounts.good > data.moodCounts.rough && (
-              <p style={{ fontSize: 13, color: 'var(--success)', marginTop: 14, margin: '14px 0 0 0', fontStyle: 'italic' }}>
+              <p
+                style={{
+                  fontSize: 13,
+                  color: 'var(--success)',
+                  marginTop: 14,
+                  margin: '14px 0 0 0',
+                  fontStyle: 'italic',
+                }}
+              >
                 More good days than rough ones — that&apos;s real progress.
               </p>
             )}
@@ -510,22 +851,61 @@ export default function InsightsPage() {
               border: '1px solid var(--border)',
             }}
           >
-            <h2 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)', margin: '0 0 20px 0', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+            <h2
+              style={{
+                fontSize: 14,
+                fontWeight: 600,
+                color: 'var(--text-secondary)',
+                margin: '0 0 20px 0',
+                letterSpacing: '0.04em',
+                textTransform: 'uppercase',
+              }}
+            >
               When you dose
             </h2>
             <div style={{ display: 'flex', gap: 8, justifyContent: 'space-around' }}>
-              <TimingBubble label="Morning" Icon={Sunrise} count={data.timing.morning} max={maxTiming} />
-              <TimingBubble label="Afternoon" Icon={Sun} count={data.timing.afternoon} max={maxTiming} />
-              <TimingBubble label="Evening" Icon={Sunset} count={data.timing.evening} max={maxTiming} />
+              <TimingBubble
+                label="Morning"
+                Icon={Sunrise}
+                count={data.timing.morning}
+                max={maxTiming}
+              />
+              <TimingBubble
+                label="Afternoon"
+                Icon={Sun}
+                count={data.timing.afternoon}
+                max={maxTiming}
+              />
+              <TimingBubble
+                label="Evening"
+                Icon={Sunset}
+                count={data.timing.evening}
+                max={maxTiming}
+              />
               <TimingBubble label="Night" Icon={Moon} count={data.timing.night} max={maxTiming} />
             </div>
             {(() => {
-              const peak = (Object.entries(data.timing) as [TimeSlot, number][]).reduce((a, b) => b[1] > a[1] ? b : a)
+              const peak = (Object.entries(data.timing) as [TimeSlot, number][]).reduce((a, b) =>
+                b[1] > a[1] ? b : a
+              )
               if (peak[1] === 0) return null
-              const labels: Record<TimeSlot, string> = { morning: 'mornings', afternoon: 'afternoons', evening: 'evenings', night: 'nights' }
+              const labels: Record<TimeSlot, string> = {
+                morning: 'mornings',
+                afternoon: 'afternoons',
+                evening: 'evenings',
+                night: 'nights',
+              }
               return (
-                <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 16, margin: '16px 0 0 0' }}>
-                  You tend to dose most in the <strong style={{ color: 'var(--text-primary)' }}>{labels[peak[0]]}</strong>.
+                <p
+                  style={{
+                    fontSize: 13,
+                    color: 'var(--text-secondary)',
+                    marginTop: 16,
+                    margin: '16px 0 0 0',
+                  }}
+                >
+                  You tend to dose most in the{' '}
+                  <strong style={{ color: 'var(--text-primary)' }}>{labels[peak[0]]}</strong>.
                 </p>
               )
             })()}
@@ -534,13 +914,15 @@ export default function InsightsPage() {
 
         {/* Symptom tracker summary */}
         {(() => {
-          const SYMPTOM_KEYS: Array<{ key: keyof SymptomData; emoji: string; label: string }> = [
-            { key: 'sleep', emoji: '😴', label: 'Sleep' },
-            { key: 'anxiety', emoji: '😰', label: 'Anxiety' },
-            { key: 'restlessness', emoji: '🦵', label: 'Restlessness' },
-            { key: 'gi', emoji: '🤢', label: 'Gut/GI' },
+          const SYMPTOM_KEYS: Array<{ key: keyof SymptomData; Icon: LucideIcon; label: string }> = [
+            { key: 'sleep', Icon: Moon, label: 'Sleep' },
+            { key: 'anxiety', Icon: BrainCircuit, label: 'Anxiety' },
+            { key: 'restlessness', Icon: Activity, label: 'Restlessness' },
+            { key: 'gi', Icon: Stethoscope, label: 'Gut/GI' },
           ]
-          const daysWithAnySymptom = data.symptomData14.filter(d => Object.keys(d.symptoms).length > 0).length
+          const daysWithAnySymptom = data.symptomData14.filter(
+            (d) => Object.keys(d.symptoms).length > 0
+          ).length
           if (daysWithAnySymptom === 0) return null
 
           return (
@@ -548,35 +930,83 @@ export default function InsightsPage() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.32, duration: 0.3 }}
-              style={{ backgroundColor: 'var(--surface)', borderRadius: 20, padding: 20, border: '1px solid var(--border)' }}
+              style={{
+                backgroundColor: 'var(--surface)',
+                borderRadius: 20,
+                padding: 20,
+                border: '1px solid var(--border)',
+              }}
             >
-              <h2 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)', margin: '0 0 16px 0', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+              <h2
+                style={{
+                  fontSize: 14,
+                  fontWeight: 600,
+                  color: 'var(--text-secondary)',
+                  margin: '0 0 16px 0',
+                  letterSpacing: '0.04em',
+                  textTransform: 'uppercase',
+                }}
+              >
                 Physical symptoms — 14 days
               </h2>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {SYMPTOM_KEYS.map(({ key, emoji, label }) => {
-                  const mildDays = data.symptomData14.filter(d => d.symptoms[key] === 'mild').length
-                  const badDays = data.symptomData14.filter(d => d.symptoms[key] === 'bad').length
-                  const trackedDays = data.symptomData14.filter(d => !!d.symptoms[key]).length
+                {SYMPTOM_KEYS.map(({ key, Icon: SymptomIcon, label }) => {
+                  const mildDays = data.symptomData14.filter(
+                    (d) => d.symptoms[key] === 'mild'
+                  ).length
+                  const badDays = data.symptomData14.filter((d) => d.symptoms[key] === 'bad').length
+                  const trackedDays = data.symptomData14.filter((d) => !!d.symptoms[key]).length
                   if (trackedDays === 0) return null
                   return (
                     <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <span style={{ fontSize: 18, flexShrink: 0 }}>{emoji}</span>
+                      <SymptomIcon
+                        size={18}
+                        color="var(--text-secondary)"
+                        strokeWidth={1.75}
+                        style={{ flexShrink: 0 }}
+                      />
                       <div style={{ flex: 1 }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                          <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{label}</span>
+                        <div
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            marginBottom: 4,
+                          }}
+                        >
+                          <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
+                            {label}
+                          </span>
                           <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
-                            {badDays > 0 && <span style={{ color: '#e05c5c', fontWeight: 600 }}>{badDays} bad</span>}
+                            {badDays > 0 && (
+                              <span style={{ color: '#e05c5c', fontWeight: 600 }}>
+                                {badDays} bad
+                              </span>
+                            )}
                             {badDays > 0 && mildDays > 0 && ' · '}
-                            {mildDays > 0 && <span style={{ color: 'var(--primary)' }}>{mildDays} mild</span>}
+                            {mildDays > 0 && (
+                              <span style={{ color: 'var(--primary)' }}>{mildDays} mild</span>
+                            )}
                           </span>
                         </div>
-                        <div style={{ height: 6, backgroundColor: 'var(--border)', borderRadius: 4, overflow: 'hidden', display: 'flex', gap: 2 }}>
+                        <div
+                          style={{
+                            height: 6,
+                            backgroundColor: 'var(--border)',
+                            borderRadius: 4,
+                            overflow: 'hidden',
+                            display: 'flex',
+                            gap: 2,
+                          }}
+                        >
                           <motion.div
                             initial={{ width: 0 }}
                             animate={{ width: `${(mildDays / 14) * 100}%` }}
                             transition={{ duration: 0.6, ease: 'easeOut', delay: 0.5 }}
-                            style={{ height: '100%', backgroundColor: 'var(--primary)', borderRadius: 4 }}
+                            style={{
+                              height: '100%',
+                              backgroundColor: 'var(--primary)',
+                              borderRadius: 4,
+                            }}
                           />
                           <motion.div
                             initial={{ width: 0 }}
@@ -590,7 +1020,14 @@ export default function InsightsPage() {
                   )
                 })}
               </div>
-              <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '12px 0 0 0', lineHeight: 1.4 }}>
+              <p
+                style={{
+                  fontSize: 12,
+                  color: 'var(--text-secondary)',
+                  margin: '12px 0 0 0',
+                  lineHeight: 1.4,
+                }}
+              >
                 Tracked on {daysWithAnySymptom} of 14 days. Log symptoms via the daily check-in.
               </p>
             </motion.div>
@@ -610,7 +1047,16 @@ export default function InsightsPage() {
               border: '1px solid var(--border)',
             }}
           >
-            <h2 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)', margin: '0 0 16px 0', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+            <h2
+              style={{
+                fontSize: 14,
+                fontWeight: 600,
+                color: 'var(--text-secondary)',
+                margin: '0 0 16px 0',
+                letterSpacing: '0.04em',
+                textTransform: 'uppercase',
+              }}
+            >
               Daily intake — 14 days
             </h2>
             <MiniBarChart snapshots={data.snapshots14} plan={taperPlan} />
@@ -628,12 +1074,22 @@ export default function InsightsPage() {
               textAlign: 'center',
             }}
           >
-            <p style={{ fontSize: 32, marginBottom: 12 }}>📊</p>
-            <p style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: 15, margin: '0 0 8px 0' }}>
+            <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'center' }}>
+              <BarChart2 size={40} color="var(--text-secondary)" strokeWidth={1.5} />
+            </div>
+            <p
+              style={{
+                fontWeight: 600,
+                color: 'var(--text-primary)',
+                fontSize: 15,
+                margin: '0 0 8px 0',
+              }}
+            >
               No data yet
             </p>
             <p style={{ color: 'var(--text-secondary)', fontSize: 14, margin: 0, lineHeight: 1.5 }}>
-              Log your doses for a few days and insights will appear here — patterns, mood trends, and your progress over time.
+              Log your doses for a few days and insights will appear here — patterns, mood trends,
+              and your progress over time.
             </p>
           </div>
         )}
@@ -642,8 +1098,18 @@ export default function InsightsPage() {
   )
 }
 
-function MiniBarChart({ snapshots, plan }: { snapshots: DaySnapshot[]; plan: import('@/lib/store').TaperPlan | null }) {
-  const maxVal = Math.max(...snapshots.map((s) => s.total), plan ? Math.max(...snapshots.map((s) => getDailyTargetForDate(plan, s.date))) : 0, 1)
+function MiniBarChart({
+  snapshots,
+  plan,
+}: {
+  snapshots: DaySnapshot[]
+  plan: import('@/lib/store').TaperPlan | null
+}) {
+  const maxVal = Math.max(
+    ...snapshots.map((s) => s.total),
+    plan ? Math.max(...snapshots.map((s) => getDailyTargetForDate(plan, s.date))) : 0,
+    1
+  )
 
   return (
     <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4, height: 72 }}>
@@ -652,14 +1118,20 @@ function MiniBarChart({ snapshots, plan }: { snapshots: DaySnapshot[]; plan: imp
         const target = plan ? getDailyTargetForDate(plan, snap.date) : null
         const isOver = target !== null && snap.total > target
         const isToday = i === snapshots.length - 1
-        const color = snap.total === 0
-          ? 'var(--border)'
-          : isOver
-          ? 'var(--danger)'
-          : 'var(--success)'
+        const color =
+          snap.total === 0 ? 'var(--border)' : isOver ? 'var(--danger)' : 'var(--success)'
 
         return (
-          <div key={dateToKey(snap.date)} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+          <div
+            key={dateToKey(snap.date)}
+            style={{
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 4,
+            }}
+          >
             <motion.div
               initial={{ height: 0 }}
               animate={{ height: barH }}
@@ -673,7 +1145,14 @@ function MiniBarChart({ snapshots, plan }: { snapshots: DaySnapshot[]; plan: imp
               }}
             />
             {isToday && (
-              <div style={{ width: 4, height: 4, borderRadius: '50%', backgroundColor: 'var(--primary)' }} />
+              <div
+                style={{
+                  width: 4,
+                  height: 4,
+                  borderRadius: '50%',
+                  backgroundColor: 'var(--primary)',
+                }}
+              />
             )}
           </div>
         )

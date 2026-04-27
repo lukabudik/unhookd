@@ -6,6 +6,7 @@ import { formatGrams, getProgressPercent } from '@/lib/utils'
 interface TaperProgressProps {
   current: number
   target: number
+  weeklyContext?: string
 }
 
 function ArcProgress({ percent }: { percent: number }) {
@@ -64,15 +65,15 @@ function ArcProgress({ percent }: { percent: number }) {
   )
 }
 
-export function TaperProgress({ current, target }: TaperProgressProps) {
+export function TaperProgress({ current, target, weeklyContext }: TaperProgressProps) {
   const percent = useMemo(() => getProgressPercent(current, target), [current, target])
   const remaining = Math.max(0, target - current)
 
   const statusMessage = useMemo(() => {
     if (percent > 100) return "Over today's goal — that's okay, tomorrow is fresh"
     if (percent > 85) return "Almost at your limit — you've got this"
-    if (percent > 50) return "Making your way through the day — stay steady"
-    return "Great day! Well within your goal"
+    if (percent > 50) return 'Making your way through the day — stay steady'
+    return 'Great day! Well within your goal'
   }, [percent])
 
   const statusColor = useMemo(() => {
@@ -165,25 +166,42 @@ export function TaperProgress({ current, target }: TaperProgressProps) {
         </p>
       </div>
 
-      {/* Remaining display */}
-      {remaining > 0 && percent <= 100 && (
-        <div style={{ display: 'flex', gap: 24, justifyContent: 'center' }}>
+      {/* Remaining + weekly context */}
+      <div
+        style={{
+          display: 'flex',
+          gap: 16,
+          justifyContent: 'center',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+        }}
+      >
+        {remaining > 0 && percent <= 100 && (
           <div style={{ textAlign: 'center' }}>
-            <div
-              style={{
-                fontSize: 22,
-                fontWeight: 700,
-                color: 'var(--success)',
-              }}
-            >
+            <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--success)' }}>
               {formatGrams(remaining)}
             </div>
             <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 2 }}>
-              remaining
+              remaining today
             </div>
           </div>
-        </div>
-      )}
+        )}
+        {weeklyContext && (
+          <div
+            style={{
+              fontSize: 12,
+              color: 'var(--text-secondary)',
+              backgroundColor: 'var(--bg)',
+              borderRadius: 8,
+              padding: '4px 10px',
+              lineHeight: 1.4,
+              textAlign: 'center',
+            }}
+          >
+            {weeklyContext}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
