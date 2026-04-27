@@ -204,6 +204,9 @@ export default function PlanPage() {
               </p>
             </div>
 
+            {/* Dose calculator */}
+            <DoseCalculator onApply={(daily) => { setStartAmount(daily); setTargetAmount(0) }} />
+
             {/* Starting amount */}
             <div
               style={{
@@ -740,6 +743,159 @@ export default function PlanPage() {
                 Goal amount must be less than starting amount
               </p>
             )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
+// ─── Dose calculator ──────────────────────────────────────────────────────
+
+function DoseCalculator({ onApply }: { onApply: (dailyLimit: number) => void }) {
+  const [open, setOpen] = useState(false)
+  const [grams, setGrams] = useState('')
+  const [days, setDays] = useState('')
+
+  const gramsNum = parseFloat(grams)
+  const daysNum = parseInt(days)
+  const dailyLimit = gramsNum > 0 && daysNum > 0 ? Math.round((gramsNum / daysNum) * 10) / 10 : null
+
+  return (
+    <div
+      style={{
+        backgroundColor: 'var(--surface)',
+        borderRadius: 20,
+        border: '1px solid var(--border)',
+        overflow: 'hidden',
+      }}
+    >
+      <button
+        onClick={() => setOpen(!open)}
+        style={{
+          width: '100%',
+          padding: '16px 20px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+          color: 'var(--text-primary)',
+        }}
+      >
+        <div style={{ textAlign: 'left' }}>
+          <p style={{ margin: 0, fontSize: 15, fontWeight: 600 }}>Calculate from what I have</p>
+          <p style={{ margin: '2px 0 0 0', fontSize: 12, color: 'var(--text-secondary)' }}>
+            Know your grams remaining? Work backwards to a daily limit.
+          </p>
+        </div>
+        <span style={{ fontSize: 18, color: 'var(--text-secondary)', opacity: 0.6, flexShrink: 0 }}>
+          {open ? '▲' : '▼'}
+        </span>
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            style={{ overflow: 'hidden' }}
+          >
+            <div style={{ padding: '0 20px 20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div style={{ display: 'flex', gap: 10 }}>
+                <div style={{ flex: 1 }}>
+                  <p style={{ margin: '0 0 6px 0', fontSize: 12, color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Grams remaining</p>
+                  <input
+                    type="number"
+                    step="1"
+                    min="0"
+                    placeholder="e.g. 50"
+                    value={grams}
+                    onChange={e => setGrams(e.target.value)}
+                    style={{
+                      width: '100%',
+                      height: 46,
+                      padding: '0 12px',
+                      borderRadius: 12,
+                      border: '1px solid var(--border)',
+                      backgroundColor: 'var(--bg)',
+                      color: 'var(--text-primary)',
+                      fontSize: 15,
+                      fontFamily: 'inherit',
+                      boxSizing: 'border-box',
+                    }}
+                  />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <p style={{ margin: '0 0 6px 0', fontSize: 12, color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Days to taper</p>
+                  <input
+                    type="number"
+                    step="1"
+                    min="1"
+                    placeholder="e.g. 30"
+                    value={days}
+                    onChange={e => setDays(e.target.value)}
+                    style={{
+                      width: '100%',
+                      height: 46,
+                      padding: '0 12px',
+                      borderRadius: 12,
+                      border: '1px solid var(--border)',
+                      backgroundColor: 'var(--bg)',
+                      color: 'var(--text-primary)',
+                      fontSize: 15,
+                      fontFamily: 'inherit',
+                      boxSizing: 'border-box',
+                    }}
+                  />
+                </div>
+              </div>
+
+              {dailyLimit !== null && (
+                <motion.div
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  style={{
+                    backgroundColor: 'rgba(232,168,124,0.08)',
+                    border: '1px solid rgba(232,168,124,0.25)',
+                    borderRadius: 14,
+                    padding: '14px 16px',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                  }}
+                >
+                  <div>
+                    <p style={{ margin: 0, fontSize: 13, color: 'var(--text-secondary)' }}>Recommended daily limit</p>
+                    <p style={{ margin: '2px 0 0 0', fontSize: 26, fontWeight: 800, color: 'var(--primary)', lineHeight: 1 }}>
+                      {dailyLimit}g / day
+                    </p>
+                    <p style={{ margin: '4px 0 0 0', fontSize: 11, color: 'var(--text-secondary)' }}>
+                      Tapering to zero over {daysNum} days ({Math.round(daysNum / 7)} weeks)
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => { onApply(dailyLimit); setOpen(false) }}
+                    style={{
+                      padding: '10px 16px',
+                      borderRadius: 12,
+                      backgroundColor: 'var(--primary)',
+                      color: 'var(--bg)',
+                      fontWeight: 700,
+                      fontSize: 14,
+                      border: 'none',
+                      cursor: 'pointer',
+                      flexShrink: 0,
+                    }}
+                  >
+                    Use this
+                  </button>
+                </motion.div>
+              )}
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
