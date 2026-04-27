@@ -6,11 +6,17 @@
 
 **[→ Try it live at unhookd.vercel.app](https://unhookd.vercel.app)**
 
+[![CI](https://github.com/lukabudik/unhookd/actions/workflows/ci.yml/badge.svg)](https://github.com/lukabudik/unhookd/actions/workflows/ci.yml)
+[![Deploy](https://img.shields.io/badge/deploy-vercel-black?logo=vercel)](https://unhookd.vercel.app)
+[![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue?logo=typescript)](https://www.typescriptlang.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js)](https://nextjs.org/)
+[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+
 ---
 
 ## The Story
 
-Kratom is easy to start and genuinely hard to stop. Unlike most substances, it hits both opioid and stimulant receptors — so withdrawal is exhausting *and* anxious at the same time. The physical peak passes in about a week. The psychological flatness can drag on for months. Most people relapse not during the hard part, but 4–6 weeks in, when life feels gray and they don't know why.
+Kratom is easy to start and genuinely hard to stop. Unlike most substances, it hits both opioid and stimulant receptors — so withdrawal is exhausting _and_ anxious at the same time. The physical peak passes in about a week. The psychological flatness can drag on for months. Most people relapse not during the hard part, but 4–6 weeks in, when life feels gray and they don't know why.
 
 I built Unhookd because the tools that existed felt clinical — dose trackers, habit apps, generic step-count widgets. None of them understood the actual shape of what quitting kratom feels like. This one tries to.
 
@@ -21,12 +27,14 @@ It's a mobile-first PWA designed to be installed on your phone and used daily. E
 ## Features
 
 ### Daily Tracking
+
 - **Progress ring** — visual arc showing today's dose vs. your daily target
 - **Quick-log bottom sheet** — log a dose in 2 taps from the home screen; preset amounts scale with your target
 - **Full log page** — custom amounts, mood tracking, notes, and backdating for missed entries
 - **Dose editing** — tap any logged dose to correct it; delete is there too
 
 ### Taper Plan
+
 - **Linear taper calculator** — set your starting dose, goal, and timeline; the app calculates your daily target automatically
 - **Dose calculator** — enter grams remaining and days to taper; get a recommended daily limit with one tap to apply it
 - **Taper trajectory chart** — SVG arc showing your full planned curve with actual logged dots and a "you are here" marker
@@ -35,29 +43,34 @@ It's a mobile-first PWA designed to be installed on your phone and used daily. E
 - **Reasons field** — write down why you're doing this; it shows up inside the craving modal when you need it most
 
 ### Craving Support
+
 - **Craving SOS** — guided breathing modal with animated orb, contextual message using your personal reasons and current streak
 - **Emergency contact** — optionally set a "my person" name and phone number; a one-tap call button appears inside the SOS modal
 - **HALT check** — when you're about to log over your daily target, a non-judgmental prompt surfaces: Hungry, Anxious, Lonely, Tired?
 - **Resistance tracking** — log when you rode out a craving; counts are tracked in Insights
 
 ### Daily Check-in
+
 - **5-level mood scale** — quick emoji check-in each day
 - **Symptom tracker** — log sleep quality, anxiety, restlessness, and GI symptoms with fine/mild/bad severity
 - **Movement tracker** — simple yes/no for daily exercise (more effective for withdrawal than most people expect)
 - **Free-text note** — 140 characters of whatever's on your mind
 
 ### Phase-Aware Guidance
+
 - **Kratom-specific phase content** — 8 distinct phases from early taper through PAWS (post-acute withdrawal syndrome), each with copy written for that specific stage of recovery
 - **Symptom-to-supplement engine** — reads your recent check-in data, scores 11 evidence-based supplements by symptom relevance, and surfaces the top 3 with dose guidance and plain-language explanations
 - **Post-zero mode** — when you complete your taper, the home screen shifts to a days-clean counter with PAWS-specific guidance
 
 ### History & Insights
+
 - **30-day history** — tap any day to drill into individual doses, edit or delete entries, or add a missed dose
 - **7-day bar chart** — dose vs. target at a glance
 - **Insights page** — week-over-week averages, mood breakdown, dose timing patterns, craving resistance, symptom trends, and movement days
 - **Milestones** — streak, journey, and taper progress milestones with celebration modals
 
 ### PWA & Notifications
+
 - **Installable PWA** — add to home screen on iOS (Safari) or Android (Chrome); install banner shown automatically on first visit
 - **Smart daily reminders** — configurable reminder time; copy adapts to whether you've already logged, your current streak, and time of day
 - **Weekly summary** — Sunday evening notification with last week's stats (days logged, days on target, streak)
@@ -71,18 +84,18 @@ It's a mobile-first PWA designed to be installed on your phone and used daily. E
 
 ## Tech Stack
 
-| Layer | Choice |
-|---|---|
-| Framework | Next.js 16 (App Router, Turbopack) |
-| Language | TypeScript (strict) |
-| Styling | Tailwind CSS v4 |
-| Animation | Framer Motion |
-| State | Zustand |
-| Data | Firebase (Firestore + Anonymous Auth) + localStorage fallback |
-| Notifications | Web Notification API + Firebase Cloud Messaging |
-| PWA | Custom service worker + Web App Manifest |
-| Date handling | date-fns |
-| Deployment | Vercel |
+| Layer         | Choice                                                        |
+| ------------- | ------------------------------------------------------------- |
+| Framework     | Next.js 16 (App Router, Turbopack)                            |
+| Language      | TypeScript (strict)                                           |
+| Styling       | Tailwind CSS v4                                               |
+| Animation     | Framer Motion                                                 |
+| State         | Zustand                                                       |
+| Data          | Firebase (Firestore + Anonymous Auth) + localStorage fallback |
+| Notifications | Web Notification API + Firebase Cloud Messaging               |
+| PWA           | Custom service worker + Web App Manifest                      |
+| Date handling | date-fns                                                      |
+| Deployment    | Vercel                                                        |
 
 The app is **offline-first** — all data lives in `localStorage` by default. Firebase is an optional sync layer: if credentials are configured, data mirrors to Firestore automatically. If not, everything still works.
 
@@ -91,6 +104,7 @@ The app is **offline-first** — all data lives in `localStorage` by default. Fi
 ## Getting Started
 
 ### Prerequisites
+
 - Node.js 18+
 - A Firebase project (for cloud sync and push notifications — optional)
 
@@ -215,4 +229,4 @@ MIT — use it, fork it, make it yours.
 
 ---
 
-*Built with [Claude Code](https://claude.ai/code).*
+_Built with [Claude Code](https://claude.ai/code)._
