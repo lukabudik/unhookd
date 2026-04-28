@@ -190,17 +190,103 @@ export function dateToKey(date: Date): string {
 }
 
 /**
- * Get the past N dates including today, in order from oldest to newest
+ * Parse a YYYY-MM-DD key string into a UTC-midnight Date.
+ * Using UTC midnight ensures dateToKey(result) === the original key string,
+ * regardless of the user's local timezone.
+ */
+function keyToUTCDate(key: string): Date {
+  const [y, m, d] = key.split('-').map(Number)
+  return new Date(Date.UTC(y, m - 1, d))
+}
+
+/**
+ * Get the past N dates including today, in order from oldest to newest.
+ * Dates are at UTC midnight so dateToKey(date) always matches getTodayKey().
  */
 export function getPastDates(n: number): Date[] {
-  const dates: Date[] = []
-  for (let i = n - 1; i >= 0; i--) {
-    const d = new Date()
-    d.setDate(d.getDate() - i)
-    d.setHours(0, 0, 0, 0)
-    dates.push(d)
+  const msPerDay = 1000 * 60 * 60 * 24
+  const todayMs = keyToUTCDate(getTodayKey()).getTime()
+  return Array.from({ length: n }, (_, i) => new Date(todayMs - (n - 1 - i) * msPerDay))
+}
+
+/**
+ * Get all dates from a plan start date through today, oldest first.
+ * Dates are at UTC midnight so dateToKey(date) always matches storage keys.
+ */
+export function getDatesSince(startDateKey: string, maxDays = 365): Date[] {
+  const msPerDay = 1000 * 60 * 60 * 24
+  const startMs = keyToUTCDate(startDateKey).getTime()
+  const todayMs = keyToUTCDate(getTodayKey()).getTime()
+  const totalDays = Math.min(maxDays, Math.max(1, Math.floor((todayMs - startMs) / msPerDay) + 1))
+  return Array.from({ length: totalDays }, (_, i) => new Date(startMs + i * msPerDay))
+}
+
+export interface PlanOption {
+  label: string
+  description: string
+  weeklyDrop: number // grams per week
+  weeks: number
+  daysToTarget: number
+  rate: number // fraction of startDose per week
+  isColdTurkey?: boolean
+}
+
+/**
+ * Generate a single plan option from a rate (e.g. 0.10 = 10% of start dose per week).
+ * weeklyDrop is rounded to nearest 0.5g, minimum 0.5g.
+ * weeks is recalculated from the rounded drop so the plan lands exactly on target.
+ */
+export function generatePlanOption(
+  startDose: number,
+  targetDose: number,
+  rate: number,
+  label: string,
+  description: string
+): PlanOption {
+  const reduction = startDose - targetDose
+  const rawDrop = startDose * rate
+  const weeklyDrop = Math.max(0.5, Math.round(rawDrop * 2) / 2)
+  const weeks = Math.ceil(reduction / weeklyDrop)
+  return { label, description, weeklyDrop, weeks, daysToTarget: weeks * 7, rate }
+}
+
+/**
+ * Generate all 4 standard plan options for a given start/target dose.
+ */
+export function getAllPlanOptions(startDose: number, targetDose: number): PlanOption[] {
+  const coldTurkey: PlanOption = {
+    label: 'Cold turkey',
+    description: 'Stop today. Hardest on your body, fastest resolution.',
+    weeklyDrop: startDose - targetDose,
+    weeks: 0,
+    daysToTarget: 0,
+    rate: 1,
+    isColdTurkey: true,
   }
-  return dates
+  return [
+    generatePlanOption(
+      startDose,
+      targetDose,
+      0.05,
+      'Gentle',
+      'Small steps, low discomfort. Best for high doses or first attempts.'
+    ),
+    generatePlanOption(
+      startDose,
+      targetDose,
+      0.1,
+      'Steady',
+      'Balanced pace. Works for most people.'
+    ),
+    generatePlanOption(
+      startDose,
+      targetDose,
+      0.2,
+      'Fast',
+      'Steeper drops. Shorter timeline, more intensity.'
+    ),
+    coldTurkey,
+  ]
 }
 
 /**

@@ -3,8 +3,22 @@
 import React, { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useAppStore } from '@/lib/store'
-import { getPastDates, dateToKey, getDailyTargetForDate, formatGrams } from '@/lib/utils'
+import {
+  getDatesSince,
+  getPastDates,
+  dateToKey,
+  getDailyTargetForDate,
+  getDaysSincePlanStart,
+  formatGrams,
+} from '@/lib/utils'
 import { IntakeEntry } from '@/lib/store'
+import {
+  detectPhase,
+  computeSymptomScores,
+  getSuggestedSupplements,
+  Supplement,
+} from '@/lib/phases'
+import { SymptomSuggestionsCard } from '@/components/SymptomSuggestionsCard'
 import {
   Shield,
   Sunrise,
@@ -111,6 +125,7 @@ interface InsightData {
   resistanceByDay14: { date: Date; count: number }[]
   symptomData14: DaySymptoms[]
   movementDays14: number
+  suggestedSupplements: Supplement[]
 }
 
 function StatCard({
@@ -343,10 +358,36 @@ export default function InsightsPage() {
   const [data, setData] = useState<InsightData | null>(null)
 
   useEffect(() => {
-    const snapshots28 = loadDaySnapshots(28)
-    const snapshots14 = snapshots28.slice(14) // last 14 days
-    const thisWeekSnaps = snapshots28.slice(21) // last 7 days
-    const lastWeekSnaps = snapshots28.slice(14, 21) // prev 7 days
+    // Use actual days since plan start (max 28), so new users don't see empty bars
+    const daysSinceStart = taperPlan?.startDate
+      ? getDaysSincePlanStart(taperPlan.startDate) + 1
+      : 28
+    const windowDays = Math.min(28, Math.max(1, daysSinceStart))
+    const windowDays14 = Math.min(14, Math.max(1, daysSinceStart))
+
+    const allDates = taperPlan?.startDate
+      ? getDatesSince(taperPlan.startDate, 28)
+      : getPastDates(28)
+
+    const snapshots28 = allDates.map((date) => {
+      const key = dateToKey(date)
+      try {
+        const raw = localStorage.getItem(`unhookd_intakes_${key}`)
+        if (!raw) return { date, intakes: [], total: 0 }
+        const parsed = JSON.parse(raw) as Array<IntakeEntry & { timestamp: string }>
+        const intakes = parsed.map((e) => ({ ...e, timestamp: new Date(e.timestamp) }))
+        const total = intakes.reduce((sum, e) => sum + e.amount, 0)
+        return { date, intakes, total }
+      } catch {
+        return { date, intakes: [], total: 0 }
+      }
+    })
+
+    const snapshots14 = snapshots28.slice(-windowDays14) // last 14 (or fewer) days
+    const thisWeekSnaps = snapshots28.slice(-7) // last 7 days
+    const lastWeekSnaps = snapshots28.slice(-14, -7) // prev 7 days
+
+    void windowDays // used implicitly via allDates length
 
     // Weekly averages (only counting logged days)
     const thisWeekLogged = thisWeekSnaps.filter((d) => d.total > 0)
@@ -406,15 +447,15 @@ export default function InsightsPage() {
       avgVsTarget = diffs.reduce((s, d) => s + d, 0) / diffs.length
     }
 
-    // Craving resistance (last 14 days)
-    const resistanceByDay14 = loadResistanceData(14)
+    // Craving resistance (dynamic window)
+    const resistanceByDay14 = loadResistanceData(windowDays14)
     const totalResistances14 = resistanceByDay14.reduce((s, d) => s + d.count, 0)
 
-    // Symptom data (last 14 days)
-    const symptomData14 = loadSymptomData(14)
+    // Symptom data (dynamic window)
+    const symptomData14 = loadSymptomData(windowDays14)
 
-    // Movement days (last 14 days)
-    const movementDays14 = getPastDates(14).filter((date) => {
+    // Movement days (dynamic window)
+    const movementDays14 = getPastDates(windowDays14).filter((date) => {
       const key = dateToKey(date)
       const raw =
         typeof window !== 'undefined' ? localStorage.getItem(`unhookd_checkin_${key}`) : null
@@ -425,6 +466,11 @@ export default function InsightsPage() {
         return false
       }
     }).length
+
+    // Supplement suggestions — based on symptom scores + current phase
+    const suggestedSupplements = taperPlan
+      ? getSuggestedSupplements(computeSymptomScores(windowDays14), detectPhase(taperPlan).phase, 3)
+      : []
 
     setData({
       thisWeekAvg,
@@ -441,6 +487,7 @@ export default function InsightsPage() {
       resistanceByDay14,
       symptomData14,
       movementDays14,
+      suggestedSupplements,
     })
   }, [taperPlan])
 
@@ -577,7 +624,20 @@ export default function InsightsPage() {
             Insights
           </h1>
           <p style={{ fontSize: 14, color: 'var(--text-secondary)', margin: 0 }}>
-            Patterns from your last 14 days
+            {taperPlan
+              ? (() => {
+                  const daysSince = getDaysSincePlanStart(taperPlan.startDate)
+                  const totalDays =
+                    taperPlan.daysToTarget !== undefined
+                      ? taperPlan.daysToTarget
+                      : taperPlan.weeksToTarget * 7
+                  const weekNum = Math.floor(daysSince / 7) + 1
+                  const totalWeeks = Math.ceil(totalDays / 7)
+                  const currentTarget = getDailyTargetForDate(taperPlan, new Date())
+                  if (totalDays === 0) return 'Cold turkey — tracking your recovery'
+                  return `Week ${weekNum} of ${totalWeeks} · ${formatGrams(currentTarget)} target today`
+                })()
+              : 'Patterns from your recent history'}
           </p>
         </div>
 
@@ -643,6 +703,45 @@ export default function InsightsPage() {
           </div>
         )}
 
+        {/* Plan pace sentence */}
+        {taperPlan &&
+          data.thisWeekAvg > 0 &&
+          (() => {
+            const expectedToday = getDailyTargetForDate(taperPlan, new Date())
+            const diff = data.thisWeekAvg - expectedToday
+            const absDiff = Math.abs(Math.round(diff * 10) / 10)
+            const pct = Math.round(Math.abs(diff / expectedToday) * 100)
+            const isOnPace = Math.abs(diff) < 0.5
+            const isAhead = diff < -0.5
+            let msg: string
+            let color: string
+            if (isOnPace) {
+              msg = `You're right on pace — averaging ${formatGrams(Math.round(data.thisWeekAvg * 10) / 10)} against a ${formatGrams(expectedToday)} target.`
+              color = 'var(--success)'
+            } else if (isAhead) {
+              msg = `You're ${absDiff} ahead of pace (${pct}% under target). Strong week.`
+              color = 'var(--success)'
+            } else {
+              msg = `You're averaging ${absDiff} over your plan target this week. A hold day might help reset.`
+              color = 'var(--primary)'
+            }
+            return (
+              <motion.div
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.05 }}
+                style={{
+                  backgroundColor: 'var(--surface)',
+                  borderRadius: 14,
+                  padding: '12px 16px',
+                  border: `1px solid ${isAhead || isOnPace ? 'rgba(127,176,105,0.25)' : 'rgba(232,168,124,0.25)'}`,
+                }}
+              >
+                <p style={{ margin: 0, fontSize: 13, color, lineHeight: 1.5 }}>{msg}</p>
+              </motion.div>
+            )
+          })()}
+
         {/* Top stat row */}
         <div style={{ display: 'flex', gap: 10 }}>
           <StatCard
@@ -670,8 +769,8 @@ export default function InsightsPage() {
           />
           <StatCard
             label="Days logged"
-            value={`${data.daysLogged}/14`}
-            sub="last 14 days"
+            value={`${data.daysLogged}/${data.snapshots14.length}`}
+            sub={`last ${data.snapshots14.length} days`}
             accent="var(--text-primary)"
             delay={0.1}
           />
@@ -688,8 +787,8 @@ export default function InsightsPage() {
           />
           <StatCard
             label="Movement days"
-            value={`${data.movementDays14}/14`}
-            sub="last 14 days"
+            value={`${data.movementDays14}/${data.snapshots14.length}`}
+            sub={`last ${data.snapshots14.length} days`}
             accent={
               data.movementDays14 >= 10
                 ? 'var(--success)'
@@ -712,9 +811,9 @@ export default function InsightsPage() {
           )}
           {taperPlan && data.totalReduction > 0 && (
             <StatCard
-              label="Saved vs start"
-              value={formatGrams(Math.round(data.totalReduction * 10) / 10)}
-              sub="vs. your starting dose"
+              label="Reduced vs start"
+              value={`${Math.round((data.totalReduction / (taperPlan.startAmount * data.snapshots14.filter((d) => d.total > 0).length)) * 100)}%`}
+              sub={`avg ${formatGrams(Math.round((data.totalReduction / Math.max(1, data.snapshots14.filter((d) => d.total > 0).length)) * 10) / 10)} lighter/day`}
               accent="var(--success)"
               delay={0.2}
             />
@@ -1033,6 +1132,11 @@ export default function InsightsPage() {
             </motion.div>
           )
         })()}
+
+        {/* Supplement suggestions — shown when symptom data exists */}
+        {data.suggestedSupplements.length > 0 && (
+          <SymptomSuggestionsCard supplements={data.suggestedSupplements} />
+        )}
 
         {/* Weekly comparison mini chart */}
         {data.snapshots14.some((d) => d.total > 0) && (

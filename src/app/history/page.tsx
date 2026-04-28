@@ -5,8 +5,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useAppStore } from '@/lib/store'
 import { useFirestore } from '@/hooks/useFirestore'
 import { IntakeEntry } from '@/lib/store'
-import { IntakeChart } from '@/components/IntakeChart'
 import {
+  getDatesSince,
   getPastDates,
   dateToKey,
   formatGrams,
@@ -94,7 +94,7 @@ export default function HistoryPage() {
   const [visibleDays, setVisibleDays] = useState(30)
 
   const loadHistory = useCallback(async () => {
-    const dates = getPastDates(90)
+    const dates = taperPlan?.startDate ? getDatesSince(taperPlan.startDate) : getPastDates(30)
     const data = await Promise.all(
       dates.map(async (date) => {
         const key = dateToKey(date)
@@ -150,18 +150,12 @@ export default function HistoryPage() {
     refreshSelectedDay(dayKey)
   }
 
-  const streak = (() => {
-    let count = 0
-    const reversed = [...historyData].reverse()
-    for (const day of reversed) {
-      if (day.total === 0 && dateToKey(day.date) === dateToKey(new Date())) continue
-      if (day.total > 0 && day.total <= day.target) count++
-      else if (day.total > 0) break
-    }
-    return count
-  })()
-
-  const chartData = historyData.slice(-7)
+  // "X of last 7 days on target" — less punishing than a consecutive streak
+  const last7 = historyData.slice(-7)
+  const onTargetLast7 = last7.filter(
+    (d) => d.total > 0 && d.total <= d.target && dateToKey(d.date) !== dateToKey(new Date())
+  ).length
+  const last7HasData = last7.some((d) => d.total > 0)
 
   return (
     <div className="page-container" style={{ paddingTop: 24, paddingBottom: 24 }}>
@@ -188,8 +182,8 @@ export default function HistoryPage() {
           </p>
         </div>
 
-        {/* Streak card */}
-        {streak > 0 && (
+        {/* Weekly on-target pill */}
+        {last7HasData && (
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -198,8 +192,11 @@ export default function HistoryPage() {
               backgroundColor: 'var(--surface)',
               borderRadius: 20,
               padding: '20px',
-              border: '1px solid rgba(127, 176, 105, 0.3)',
-              background: 'linear-gradient(135deg, rgba(127,176,105,0.08) 0%, var(--surface) 100%)',
+              border: `1px solid ${onTargetLast7 >= 5 ? 'rgba(127,176,105,0.3)' : 'var(--border)'}`,
+              background:
+                onTargetLast7 >= 5
+                  ? 'linear-gradient(135deg, rgba(127,176,105,0.08) 0%, var(--surface) 100%)'
+                  : 'var(--surface)',
               display: 'flex',
               alignItems: 'center',
               gap: 16,
@@ -210,46 +207,37 @@ export default function HistoryPage() {
                 width: 56,
                 height: 56,
                 borderRadius: 16,
-                backgroundColor: 'rgba(127,176,105,0.15)',
-                border: '1px solid rgba(127,176,105,0.3)',
+                backgroundColor:
+                  onTargetLast7 >= 5 ? 'rgba(127,176,105,0.15)' : 'rgba(232,168,124,0.1)',
+                border: `1px solid ${onTargetLast7 >= 5 ? 'rgba(127,176,105,0.3)' : 'rgba(232,168,124,0.2)'}`,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 flexShrink: 0,
               }}
             >
-              <Flame size={28} color="var(--success)" strokeWidth={1.75} />
+              <Flame
+                size={28}
+                color={onTargetLast7 >= 5 ? 'var(--success)' : 'var(--primary)'}
+                strokeWidth={1.75}
+              />
             </div>
             <div>
               <div
-                style={{ fontSize: 28, fontWeight: 800, color: 'var(--success)', lineHeight: 1 }}
+                style={{
+                  fontSize: 28,
+                  fontWeight: 800,
+                  color: onTargetLast7 >= 5 ? 'var(--success)' : 'var(--primary)',
+                  lineHeight: 1,
+                }}
               >
-                {streak}-day streak
+                {onTargetLast7} of 7
               </div>
               <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4 }}>
-                Consecutive days at or under your goal
+                Days on target this week
               </div>
             </div>
           </motion.div>
-        )}
-
-        {/* Chart */}
-        {loading ? (
-          <div
-            style={{
-              backgroundColor: 'var(--surface)',
-              borderRadius: 20,
-              padding: 40,
-              border: '1px solid var(--border)',
-              textAlign: 'center',
-              color: 'var(--text-secondary)',
-              fontSize: 14,
-            }}
-          >
-            Loading history...
-          </div>
-        ) : (
-          <IntakeChart data={chartData} plan={taperPlan} />
         )}
 
         {/* History list */}
@@ -272,7 +260,9 @@ export default function HistoryPage() {
                 textTransform: 'uppercase',
               }}
             >
-              Past {Math.min(visibleDays, historyData.length)} days
+              {historyData.length <= 1
+                ? 'Today'
+                : `${Math.min(visibleDays, historyData.length)} days`}
             </h2>
             {/* Status legend */}
             <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
@@ -392,6 +382,12 @@ export default function HistoryPage() {
                             >
                               {day.checkIn.note}
                             </span>
+                          ) : day.total === 0 ? (
+                            day.checkIn ? (
+                              'Rest day'
+                            ) : (
+                              'Not recorded'
+                            )
                           ) : (
                             `target: ${formatGrams(day.target)}`
                           )}
@@ -595,7 +591,9 @@ export default function HistoryPage() {
                     padding: '20px 0',
                   }}
                 >
-                  No doses logged for this day.
+                  {selectedDay.checkIn
+                    ? 'Rest day — no doses logged.'
+                    : 'Nothing recorded for this day.'}
                 </p>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
