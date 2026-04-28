@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.1.0](https://github.com/lukabudik/unhookd/compare/v1.0.0...v1.1.0) (2026-04-28)
+
+
+### Features
+
+* **brand:** add Unhookd logo and regenerate all PWA icons ([#14](https://github.com/lukabudik/unhookd/issues/14)) ([aa4d021](https://github.com/lukabudik/unhookd/commit/aa4d021c0a2e72bf104c7689e8a6e51b566abe9e))
+* **brand:** replace logo with Recraft broken chain mark ([#15](https://github.com/lukabudik/unhookd/issues/15)) ([bd2f207](https://github.com/lukabudik/unhookd/commit/bd2f20762cff398e8e0e879e59ab4c2d80b753c0))
+* **pwa:** add /install page and improve install UX ([#17](https://github.com/lukabudik/unhookd/issues/17)) ([12afd5c](https://github.com/lukabudik/unhookd/commit/12afd5c39e0eb5c032fe8ab0e05ccb54da32483e))
+* **ux:** plan wizard, history/insights overhaul, supplement recommendations ([#12](https://github.com/lukabudik/unhookd/issues/12)) ([ceae854](https://github.com/lukabudik/unhookd/commit/ceae85483e88ac9fbc7e6e3ef113dca629b2e5cb))
+
+
+### Bug Fixes
+
+* address critical and high-priority pre-release gaps ([#13](https://github.com/lukabudik/unhookd/issues/13)) ([124be36](https://github.com/lukabudik/unhookd/commit/124be366cfe118a2166aaafdb85c5a0ad5c6c0ca))
+* **brand:** center icon mark within app icon bounds ([#16](https://github.com/lukabudik/unhookd/issues/16)) ([73fed08](https://github.com/lukabudik/unhookd/commit/73fed08e69907d5e597602762aa3903caf64036f))
+* **data:** fix duplicate intakes, missing deletes, multiple hook instances ([2e9915c](https://github.com/lukabudik/unhookd/commit/2e9915cad580467d9c64f9a4cefbb707f974b324))
+
 ## 1.0.0 (2026-04-27)
 
 
