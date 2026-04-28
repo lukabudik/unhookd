@@ -11,7 +11,8 @@ const geistSans = Geist({
 
 export const metadata: Metadata = {
   title: 'Unhookd',
-  description: 'Your personal taper companion — calm, steady, one day at a time.',
+  description:
+    'A private taper companion for reducing kratom. Guided plan, daily tracking, craving support, and phase-aware guidance — no account, no email, free forever.',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
@@ -25,6 +26,22 @@ export const metadata: Metadata = {
       { url: '/favicon-16.png', type: 'image/png', sizes: '16x16' },
     ],
     apple: { url: '/apple-touch-icon.png', sizes: '180x180' },
+  },
+  openGraph: {
+    title: 'Unhookd — Kratom Taper Companion',
+    description:
+      'Guided taper plan, daily dose tracking, craving SOS, and phase-aware guidance from taper through PAWS. 100% private — no account, no email, free forever.',
+    url: 'https://unhookd.health',
+    siteName: 'Unhookd',
+    images: [{ url: 'https://unhookd.health/og-image.png', width: 1200, height: 628 }],
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Unhookd — Kratom Taper Companion',
+    description:
+      'Guided taper plan, daily tracking, craving SOS, and PAWS guidance. 100% private — no account, no email, free forever.',
+    images: ['https://unhookd.health/og-image.png'],
   },
 }
 
