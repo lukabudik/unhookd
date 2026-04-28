@@ -27,28 +27,55 @@ import {
   Skull,
   Copy,
   KeyRound,
+  Info,
 } from 'lucide-react'
 import { getOrCreateRecoveryCode } from '@/lib/recovery'
 
 // ─── Utility ──────────────────────────────────────────────────────────────────
+
+// Saturation cut threshold: for doses ≥10g the community recommends
+// an initial ~1/3 reduction to clear tissue saturation before gradual drops begin.
+const SATURATION_CUT_THRESHOLD = 10
+
+function saturationCutDose(startDose: number): number {
+  return Math.round(startDose * (2 / 3) * 2) / 2 // round to nearest 0.5g
+}
 
 function buildSchedulePreview(
   startDose: number,
   targetDose: number,
   weeklyDrop: number,
   totalWeeks: number
-): { label: string; dose: number }[] {
+): { label: string; dose: number; note?: string }[] {
   if (totalWeeks === 0) return [{ label: 'Today', dose: targetDose }]
+
+  const rows: { label: string; dose: number; note?: string }[] = []
+
+  // Prepend Week 0 saturation cut for heavy users
+  if (startDose >= SATURATION_CUT_THRESHOLD) {
+    const cutDose = saturationCutDose(startDose)
+    rows.push({
+      label: 'Week 0',
+      dose: cutDose,
+      note: 'Saturation cut — clear the initial buildup first',
+    })
+  }
+
   const milestoneWeeks = [0]
   const quarter = Math.max(1, Math.round(totalWeeks / 4))
   for (let w = quarter; w < totalWeeks; w += quarter) milestoneWeeks.push(w)
   milestoneWeeks.push(totalWeeks)
   const unique = [...new Set(milestoneWeeks)]
-  return unique.map((w) => ({
-    label: w === 0 ? 'Start' : w === totalWeeks ? 'Goal' : `Week ${w}`,
-    dose:
-      w === 0 ? startDose : Math.max(targetDose, Math.round((startDose - weeklyDrop * w) * 2) / 2),
-  }))
+  rows.push(
+    ...unique.map((w) => ({
+      label: w === 0 ? 'Week 1' : w === totalWeeks ? 'Goal' : `Week ${w + 1}`,
+      dose:
+        w === 0
+          ? startDose
+          : Math.max(targetDose, Math.round((startDose - weeklyDrop * w) * 2) / 2),
+    }))
+  )
+  return rows
 }
 
 // ─── Step indicator ───────────────────────────────────────────────────────────
@@ -227,7 +254,9 @@ function PlanWizard({ onSave }: { onSave: (plan: TaperPlan) => Promise<void> }) 
                     lineHeight: 1.5,
                   }}
                 >
-                  Be honest — this is private. Any amount is fine.
+                  Be honest — this is private. Any amount is fine. If you use extracts or shots,
+                  enter your estimated powder equivalent (or what you&apos;d need of plain powder to
+                  feel normal).
                 </p>
               </div>
 
@@ -775,8 +804,9 @@ function PlanWizard({ onSave }: { onSave: (plan: TaperPlan) => Promise<void> }) 
                         textAlign: 'center',
                       }}
                     >
-                      Reaches goal in{' '}
-                      <strong style={{ color: 'var(--text-primary)' }}>{customWeeks} weeks</strong>
+                      Estimated{' '}
+                      <strong style={{ color: 'var(--text-primary)' }}>{customWeeks} weeks</strong>{' '}
+                      — drop when you feel stable, not on a strict schedule
                     </p>
                   )}
                 </div>
@@ -784,55 +814,106 @@ function PlanWizard({ onSave }: { onSave: (plan: TaperPlan) => Promise<void> }) 
 
               {/* Schedule preview */}
               {schedulePreview.length > 0 && (
-                <div
-                  style={{
-                    backgroundColor: 'var(--surface)',
-                    borderRadius: 20,
-                    border: '1px solid var(--border)',
-                    overflow: 'hidden',
-                  }}
-                >
-                  {schedulePreview.map((row, i) => (
+                <div>
+                  <div
+                    style={{
+                      backgroundColor: 'var(--surface)',
+                      borderRadius: 20,
+                      border: '1px solid var(--border)',
+                      overflow: 'hidden',
+                    }}
+                  >
+                    {schedulePreview.map((row, i) => {
+                      const isSatCut = !!row.note
+                      const isGoal = i === schedulePreview.length - 1
+                      const isFirst = !isSatCut && (i === 0 || (schedulePreview[0].note && i === 1))
+                      return (
+                        <div
+                          key={row.label}
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            padding: '12px 16px',
+                            borderBottom:
+                              i < schedulePreview.length - 1 ? '1px solid var(--border)' : 'none',
+                            backgroundColor: isSatCut
+                              ? 'rgba(232,168,124,0.05)'
+                              : isFirst
+                                ? 'rgba(232,168,124,0.03)'
+                                : 'transparent',
+                          }}
+                        >
+                          <div>
+                            <span
+                              style={{
+                                fontSize: 14,
+                                color: isSatCut
+                                  ? 'var(--primary)'
+                                  : isGoal
+                                    ? 'var(--success)'
+                                    : 'var(--text-secondary)',
+                                fontWeight: isSatCut || isGoal ? 600 : 400,
+                              }}
+                            >
+                              {row.label}
+                            </span>
+                            {row.note && (
+                              <p
+                                style={{
+                                  margin: '2px 0 0 0',
+                                  fontSize: 11,
+                                  color: 'var(--text-secondary)',
+                                }}
+                              >
+                                {row.note}
+                              </p>
+                            )}
+                          </div>
+                          <span
+                            style={{
+                              fontSize: 16,
+                              fontWeight: 700,
+                              color: isGoal ? 'var(--success)' : 'var(--text-primary)',
+                            }}
+                          >
+                            {row.dose === 0 ? '0g' : formatGrams(row.dose)}/day
+                          </span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                  {/* Dose splitting guidance */}
+                  {dropNum > 0 && !state.selectedOption?.isColdTurkey && (
                     <div
-                      key={row.label}
                       style={{
+                        margin: '10px 0 0 0',
                         display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        padding: '12px 16px',
-                        borderBottom:
-                          i < schedulePreview.length - 1 ? '1px solid var(--border)' : 'none',
-                        backgroundColor: i === 0 ? 'rgba(232,168,124,0.05)' : 'transparent',
+                        gap: 8,
+                        alignItems: 'flex-start',
                       }}
                     >
-                      <span
+                      <Info
+                        size={13}
+                        color="var(--text-secondary)"
+                        strokeWidth={1.75}
+                        style={{ flexShrink: 0, marginTop: 2 }}
+                      />
+                      <p
                         style={{
-                          fontSize: 14,
-                          color:
-                            i === 0
-                              ? 'var(--primary)'
-                              : i === schedulePreview.length - 1
-                                ? 'var(--success)'
-                                : 'var(--text-secondary)',
-                          fontWeight: i === 0 || i === schedulePreview.length - 1 ? 600 : 400,
+                          margin: 0,
+                          fontSize: 12,
+                          color: 'var(--text-secondary)',
+                          lineHeight: 1.5,
                         }}
                       >
-                        {row.label}
-                      </span>
-                      <span
-                        style={{
-                          fontSize: 16,
-                          fontWeight: 700,
-                          color:
-                            i === schedulePreview.length - 1
-                              ? 'var(--success)'
-                              : 'var(--text-primary)',
-                        }}
-                      >
-                        {row.dose === 0 ? '0g' : formatGrams(row.dose)}/day
-                      </span>
+                        Split your daily dose into 4–5 equal parts spaced through the day. Steady
+                        delivery reduces peaks and valleys.
+                        {dropNum > 0 &&
+                          ` At ${formatGrams(Math.round((dropNum / 4) * 2) / 2)} per dose, 4× daily is a good starting point.`}
+                      </p>
                     </div>
-                  ))}
+                  )}
                 </div>
               )}
 
@@ -1520,7 +1601,7 @@ export default function PlanPage() {
                       taperPlan.daysToTarget !== undefined
                         ? taperPlan.daysToTarget
                         : taperPlan.weeksToTarget * 7
-                    return d === 0 ? 'Mode' : d % 7 === 0 ? 'Weekly drop' : 'Daily drop'
+                    return d === 0 ? 'Mode' : 'Drop amount'
                   })(),
                   value: (() => {
                     const d =
@@ -1569,6 +1650,67 @@ export default function PlanPage() {
             </div>
 
             <TaperTrajectoryChart plan={taperPlan} />
+
+            {/* Dose splitting + adjustment guidance */}
+            {(() => {
+              const d =
+                taperPlan.daysToTarget !== undefined
+                  ? taperPlan.daysToTarget
+                  : taperPlan.weeksToTarget * 7
+              if (d === 0) return null
+              const todayTarget = getDailyTargetForDate(taperPlan, new Date())
+              const dosesPerDay = todayTarget > 4 ? 5 : todayTarget > 2 ? 4 : 3
+              const doseSize = Math.round((todayTarget / dosesPerDay) * 2) / 2
+              return (
+                <div
+                  style={{
+                    backgroundColor: 'var(--surface)',
+                    borderRadius: 16,
+                    padding: '14px 16px',
+                    border: '1px solid var(--border)',
+                  }}
+                >
+                  <p
+                    style={{
+                      fontSize: 12,
+                      fontWeight: 600,
+                      color: 'var(--text-secondary)',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em',
+                      margin: '0 0 8px 0',
+                    }}
+                  >
+                    Tips for your taper
+                  </p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    {[
+                      {
+                        icon: <Info size={13} color="var(--text-secondary)" strokeWidth={1.75} />,
+                        text: `Split into ${dosesPerDay} doses of ${formatGrams(doseSize)} spaced evenly through the day — steady delivery reduces peaks and valleys.`,
+                      },
+                      {
+                        icon: <Info size={13} color="var(--text-secondary)" strokeWidth={1.75} />,
+                        text: "Drop when stable, not by the clock. Wait until you've had 5–10 comfortable days. Withdrawal is not linear.",
+                      },
+                    ].map((item, i) => (
+                      <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                        <span style={{ flexShrink: 0, marginTop: 1 }}>{item.icon}</span>
+                        <p
+                          style={{
+                            margin: 0,
+                            fontSize: 13,
+                            color: 'var(--text-secondary)',
+                            lineHeight: 1.5,
+                          }}
+                        >
+                          {item.text}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )
+            })()}
 
             {taperPlan.reasons && (
               <div
