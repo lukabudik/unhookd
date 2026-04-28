@@ -5,6 +5,11 @@ import { IntakeEntry, TaperPlan, useAppStore } from '@/lib/store'
 import { getTodayKey, getDailyTargetForDate, dateToKey } from '@/lib/utils'
 import { getOrCreateRecoveryCode } from '@/lib/recovery'
 
+// Strip undefined values so Firestore setDoc never receives them
+function stripUndefined<T extends object>(obj: T): Partial<T> {
+  return Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== undefined)) as Partial<T>
+}
+
 // ─── localStorage helpers ──────────────────────────────────────────────────
 
 const LOCAL_PLAN_KEY = 'unhookd_plan'
@@ -307,7 +312,10 @@ export function useFirestore() {
       if (_db && _firebaseReady && _recoveryCode) {
         try {
           const { doc, setDoc } = await import('firebase/firestore')
-          await setDoc(doc(_db, 'users', _recoveryCode, 'data', 'plan'), updatedPlan)
+          await setDoc(
+            doc(_db, 'users', _recoveryCode, 'data', 'plan'),
+            stripUndefined(updatedPlan)
+          )
         } catch (err) {
           console.error('[Firestore] updatePlan failed:', err)
         }

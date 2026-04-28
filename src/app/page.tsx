@@ -18,8 +18,15 @@ import {
   getPresets,
 } from '@/lib/utils'
 import { checkNewMilestones, markMilestoneCelebrated, Milestone } from '@/lib/milestones'
-import { detectPhase } from '@/lib/phases'
+import {
+  detectPhase,
+  computeSymptomScores,
+  getSuggestedSupplements,
+  hasRecentSymptomData,
+  Supplement,
+} from '@/lib/phases'
 import { PhaseGuidanceCard } from '@/components/PhaseGuidanceCard'
+import { SymptomSuggestionsCard } from '@/components/SymptomSuggestionsCard'
 import { QuickLogSheet } from '@/components/QuickLogSheet'
 import { DailyCheckIn } from '@/components/DailyCheckIn'
 import { format } from 'date-fns'
@@ -48,6 +55,7 @@ export default function HomePage() {
   const [todayResistances, setTodayResistances] = useState(0)
   const [showResistanceToast, setShowResistanceToast] = useState(false)
   const [dosesExpanded, setDosesExpanded] = useState(false)
+  const [suggestedSupplements, setSuggestedSupplements] = useState<Supplement[]>([])
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -74,6 +82,16 @@ export default function HomePage() {
       setCurrentMilestone(milestones[0])
     }
   }, [taperPlan, todayIntakes])
+
+  useEffect(() => {
+    if (!taperPlan || !hasRecentSymptomData(3)) {
+      setSuggestedSupplements([])
+      return
+    }
+    const phase = detectPhase(taperPlan)
+    const scores = computeSymptomScores(7)
+    setSuggestedSupplements(getSuggestedSupplements(scores, phase.phase, 2))
+  }, [taperPlan])
 
   function dismissMilestone() {
     if (!currentMilestone) return
@@ -736,6 +754,9 @@ export default function HomePage() {
 
           {/* Phase guidance card — below check-in, less intrusive */}
           {phaseInfo && <PhaseGuidanceCard phaseInfo={phaseInfo} />}
+
+          {/* Supplement suggestions — only when recent symptom data exists */}
+          <SymptomSuggestionsCard supplements={suggestedSupplements} />
 
           {/* Craving SOS — subtle */}
           {taperPlan && (

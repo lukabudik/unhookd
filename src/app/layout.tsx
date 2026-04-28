@@ -35,7 +35,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className={`${geistSans.variable} h-full`}>
+    <html lang="en" className={`${geistSans.variable} h-full`} suppressHydrationWarning>
       <body
         className="min-h-full flex flex-col"
         style={{ backgroundColor: 'var(--bg)', color: 'var(--text-primary)' }}
