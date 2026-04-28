@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Smartphone, X } from 'lucide-react'
+import { Smartphone, X, ArrowRight } from 'lucide-react'
+import Link from 'next/link'
 
 const DISMISSED_KEY = 'unhookd_install_dismissed'
 const DISMISS_DAYS = 14
@@ -119,45 +120,19 @@ export function InstallBanner() {
                 Add Unhookd to your home screen
               </p>
 
-              {isIOS ? (
-                <p
-                  style={{
-                    margin: '0 0 12px 0',
-                    fontSize: 12,
-                    color: 'var(--text-secondary)',
-                    lineHeight: 1.5,
-                  }}
-                >
-                  Tap{' '}
-                  <span
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 3,
-                      verticalAlign: 'middle',
-                    }}
-                  >
-                    <ShareIcon />
-                  </span>{' '}
-                  at the bottom of Safari, then{' '}
-                  <strong style={{ color: 'var(--text-primary)' }}>"Add to Home Screen"</strong> for
-                  the full app experience.
-                </p>
-              ) : (
-                <p
-                  style={{
-                    margin: '0 0 12px 0',
-                    fontSize: 12,
-                    color: 'var(--text-secondary)',
-                    lineHeight: 1.5,
-                  }}
-                >
-                  Install for the full app experience — works offline, feels native.
-                </p>
-              )}
+              <p
+                style={{
+                  margin: '0 0 12px 0',
+                  fontSize: 12,
+                  color: 'var(--text-secondary)',
+                  lineHeight: 1.5,
+                }}
+              >
+                Works offline, feels native. No App Store needed.
+              </p>
 
               <div style={{ display: 'flex', gap: 8 }}>
-                {!isIOS && (
+                {!isIOS ? (
                   <button
                     onClick={installAndroid}
                     style={{
@@ -174,6 +149,28 @@ export function InstallBanner() {
                   >
                     Install app
                   </button>
+                ) : (
+                  <Link
+                    href="/install"
+                    style={{
+                      flex: 1,
+                      height: 36,
+                      borderRadius: 10,
+                      backgroundColor: 'var(--primary)',
+                      color: 'var(--bg)',
+                      fontWeight: 600,
+                      fontSize: 13,
+                      border: 'none',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 5,
+                      textDecoration: 'none',
+                    }}
+                  >
+                    How to install <ArrowRight size={13} strokeWidth={2.5} />
+                  </Link>
                 )}
                 <button
                   onClick={dismiss}
@@ -186,10 +183,9 @@ export function InstallBanner() {
                     fontSize: 13,
                     border: '1px solid var(--border)',
                     cursor: 'pointer',
-                    flex: isIOS ? 1 : undefined,
                   }}
                 >
-                  {isIOS ? 'Got it' : 'Not now'}
+                  Not now
                 </button>
               </div>
             </div>
@@ -214,33 +210,5 @@ export function InstallBanner() {
         </motion.div>
       )}
     </AnimatePresence>
-  )
-}
-
-function ShareIcon() {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      style={{ display: 'inline', verticalAlign: 'middle' }}
-    >
-      <path d="M12 2L12 15" stroke="var(--primary)" strokeWidth="2" strokeLinecap="round" />
-      <path
-        d="M8 6L12 2L16 6"
-        stroke="var(--primary)"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M4 12V20C4 20.5523 4.44772 21 5 21H19C19.5523 21 20 20.5523 20 20V12"
-        stroke="var(--primary)"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-    </svg>
   )
 }
