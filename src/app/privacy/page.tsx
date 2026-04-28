@@ -91,15 +91,6 @@ export default function PrivacyPage() {
           </p>
         </Section>
 
-        <Section title="Anonymous analytics">
-          <p style={{ margin: 0 }}>
-            We collect anonymous, aggregated usage patterns — things like which features are used,
-            how many people complete their taper, and general app performance. This data cannot be
-            traced back to any individual. It helps us understand what actually supports kratom
-            recovery and improve the app accordingly.
-          </p>
-        </Section>
-
         <Section title="Supplement information">
           <p style={{ margin: 0 }}>
             Supplement suggestions in Unhookd are based on community experience and published harm
@@ -121,10 +112,10 @@ export default function PrivacyPage() {
           <p style={{ margin: 0 }}>
             If you have questions, feedback, or concerns, you can reach us at{' '}
             <a
-              href="mailto:hello@unhookd.app"
+              href="mailto:hello@unhookd.health"
               style={{ color: 'var(--primary)', textDecoration: 'none' }}
             >
-              hello@unhookd.app
+              hello@unhookd.health
             </a>
             .
           </p>

@@ -4,10 +4,10 @@
 
 > Built for the real experience of quitting: the cravings at 2am, the flat weeks after you hit zero, the days when staying on plan takes genuine effort.
 
-**[→ Try it live at unhookd.vercel.app](https://unhookd.vercel.app)**
+**[→ unhookd.health](https://unhookd.health)**
 
 [![CI](https://github.com/lukabudik/unhookd/actions/workflows/ci.yml/badge.svg)](https://github.com/lukabudik/unhookd/actions/workflows/ci.yml)
-[![Deploy](https://img.shields.io/badge/deploy-vercel-black?logo=vercel)](https://unhookd.vercel.app)
+[![Deploy](https://img.shields.io/badge/deploy-vercel-black?logo=vercel)](https://unhookd.health)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue?logo=typescript)](https://www.typescriptlang.org/)
 [![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js)](https://nextjs.org/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
@@ -30,53 +30,48 @@ It's a mobile-first PWA designed to be installed on your phone and used daily. E
 
 - **Progress ring** — visual arc showing today's dose vs. your daily target
 - **Quick-log bottom sheet** — log a dose in 2 taps from the home screen; preset amounts scale with your target
-- **Full log page** — custom amounts, mood tracking, notes, and backdating for missed entries
-- **Dose editing** — tap any logged dose to correct it; delete is there too
+- **Hold quick action** — pause the taper for 7 days directly from the home screen when you need a breather
+- **Dose editing** — tap any logged dose to correct or delete it
 
 ### Taper Plan
 
-- **Linear taper calculator** — set your starting dose, goal, and timeline; the app calculates your daily target automatically
-- **Dose calculator** — enter grams remaining and days to taper; get a recommended daily limit with one tap to apply it
-- **Taper trajectory chart** — SVG arc showing your full planned curve with actual logged dots and a "you are here" marker
-- **Hold mode** — pause the taper for 7 days when you need a breather, then resume smoothly from where you left off
-- **Weekly schedule preview** — see exactly what each week of your taper looks like before you commit
-- **Reasons field** — write down why you're doing this; it shows up inside the craving modal when you need it most
+- **Guided plan wizard** — answer two questions (current dose, goal); the app generates a personalised taper with four pace options (Gentle / Steady / Fast / Cold turkey), all derived from a single formula rather than hardcoded tiers
+- **Customisable review step** — after choosing a pace, adjust the weekly drop live and watch the milestone schedule update in real time
+- **Taper trajectory chart** — shows your full planned curve with actual logged dots and a "you are here" marker
+- **Hold mode** — pause the taper for 7 days, then resume smoothly from where you left off
+- **Reasons & emergency contact** — write down why you're doing this and optionally set a person to call; both appear inside the craving SOS
 
 ### Craving Support
 
-- **Craving SOS** — guided breathing modal with animated orb, contextual message using your personal reasons and current streak
-- **Emergency contact** — optionally set a "my person" name and phone number; a one-tap call button appears inside the SOS modal
-- **HALT check** — when you're about to log over your daily target, a non-judgmental prompt surfaces: Hungry, Anxious, Lonely, Tired?
+- **Craving SOS** — guided breathing modal with contextual message using your personal reasons and current streak
+- **Emergency contact** — one-tap call button inside the SOS modal
 - **Resistance tracking** — log when you rode out a craving; counts are tracked in Insights
 
 ### Daily Check-in
 
-- **5-level mood scale** — quick emoji check-in each day
+- **5-level mood scale** — quick check-in each day
 - **Symptom tracker** — log sleep quality, anxiety, restlessness, and GI symptoms with fine/mild/bad severity
-- **Movement tracker** — simple yes/no for daily exercise (more effective for withdrawal than most people expect)
-- **Free-text note** — 140 characters of whatever's on your mind
+- **Movement tracker** — simple yes/no for daily exercise
+- **Free-text note** — optional note for the day
 
 ### Phase-Aware Guidance
 
-- **Kratom-specific phase content** — 8 distinct phases from early taper through PAWS (post-acute withdrawal syndrome), each with copy written for that specific stage of recovery
-- **Symptom-to-supplement engine** — reads your recent check-in data, scores 11 evidence-based supplements by symptom relevance, and surfaces the top 3 with dose guidance and plain-language explanations
-- **Post-zero mode** — when you complete your taper, the home screen shifts to a days-clean counter with PAWS-specific guidance
+- **Kratom-specific phase content** — 8 distinct phases from early taper through PAWS, each with copy written for that specific stage
+- **Symptom-to-supplement engine** — reads recent check-in data, scores 11 evidence-based supplements by symptom relevance, surfaces the top suggestions with dose guidance and plain-language explanations. Shown on Today (when recent symptoms logged) and Insights
+- **Post-zero mode** — home screen shifts to a days-clean counter with PAWS-specific guidance
 
 ### History & Insights
 
-- **30-day history** — tap any day to drill into individual doses, edit or delete entries, or add a missed dose
-- **7-day bar chart** — dose vs. target at a glance
-- **Insights page** — week-over-week averages, mood breakdown, dose timing patterns, craving resistance, symptom trends, and movement days
+- **History from plan start** — tap any day to drill into individual doses, edit or delete entries, or add a missed dose; date range starts from when you began your plan, not an arbitrary 30-day lookback
+- **"X of 7 days" streak** — weekly on-target metric, less punishing than consecutive-day streaks
+- **Insights page** — week-over-week averages, plan-relative pace sentence, mood breakdown, dose timing patterns, craving resistance, symptom trends, and movement days; all charts use a dynamic window that matches how long you've been using the app
 - **Milestones** — streak, journey, and taper progress milestones with celebration modals
 
-### PWA & Notifications
+### PWA & Installation
 
-- **Installable PWA** — add to home screen on iOS (Safari) or Android (Chrome); install banner shown automatically on first visit
-- **Smart daily reminders** — configurable reminder time; copy adapts to whether you've already logged, your current streak, and time of day
-- **Weekly summary** — Sunday evening notification with last week's stats (days logged, days on target, streak)
-- **Firebase Cloud Messaging** — optional server-push notifications that work when the app is fully closed
-- **Onboarding flow** — 4-slide intro covering privacy, how it works, and realistic expectations; shown once on first open
-- **Dose spacing warning** — gentle note in the quick-log sheet when your last dose was under 2 hours ago
+- **Installable PWA** — works like a native app; no App Store needed
+- **`/install` page** — shareable link with platform-specific installation instructions (iOS Safari steps, Android one-tap install, desktop QR code)
+- **Daily reminders** — enable once; the app handles the rest
 - **Data export** — download everything as JSON from Settings
 - **Full reset** — wipe all data with a confirmation modal
 
@@ -95,7 +90,7 @@ It's a mobile-first PWA designed to be installed on your phone and used daily. E
 | Notifications | Web Notification API + Firebase Cloud Messaging               |
 | PWA           | Custom service worker + Web App Manifest                      |
 | Date handling | date-fns                                                      |
-| Deployment    | Vercel                                                        |
+| Deployment    | Vercel (unhookd.health)                                       |
 
 The app is **offline-first** — all data lives in `localStorage` by default. Firebase is an optional sync layer: if credentials are configured, data mirrors to Firestore automatically. If not, everything still works.
 
@@ -159,8 +154,6 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-> **Note:** Use `npm run dev`, not `pnpm dev`. The project uses npm — pnpm will cause module resolution issues if you have other pnpm projects elsewhere on your machine.
-
 ---
 
 ## Project Structure
@@ -169,11 +162,12 @@ Open [http://localhost:3000](http://localhost:3000).
 src/
 ├── app/
 │   ├── page.tsx          # Home screen
-│   ├── log/              # Full dose logger
-│   ├── history/          # 30-day history with day drill-down
-│   ├── insights/         # Analytics and trends
-│   ├── plan/             # Taper plan setup and hold mode
-│   └── settings/         # Notifications, export, reset
+│   ├── history/          # History from plan start with day drill-down
+│   ├── insights/         # Analytics, trends, supplement suggestions
+│   ├── plan/             # Guided plan wizard + overview + hold mode
+│   ├── install/          # PWA install instructions (platform-aware)
+│   ├── privacy/          # Privacy policy & disclaimer
+│   └── settings/         # Notifications, recovery code, export, reset
 ├── components/
 │   ├── TaperProgress.tsx          # SVG arc progress ring
 │   ├── DoseLogger.tsx             # Full-featured dose form
@@ -187,7 +181,7 @@ src/
 │   └── useNotifications.ts
 └── lib/
     ├── store.ts       # Zustand global state
-    ├── utils.ts       # Taper calculations, date utilities
+    ├── utils.ts       # Taper calculations, date utilities, plan generation
     ├── phases.ts      # Phase detection + supplement scoring engine
     └── milestones.ts  # Milestone definitions and checks
 ```
@@ -196,24 +190,11 @@ src/
 
 ## Data & Privacy
 
-**On-device first.** All logs are stored in your browser's `localStorage`. No name, email address, or personally identifying information is ever collected. You are completely anonymous — the app assigns a random ID and knows nothing else about you.
+**On-device first.** All logs are stored in your browser's `localStorage`. No name, email address, or personally identifying information is ever collected. The app assigns a random recovery code and knows nothing else about you.
 
-**Anonymous usage data.** When Firebase is configured, anonymised usage patterns sync to Firestore. This data helps us understand what actually supports kratom recovery — dose reduction patterns, craving resistance rates, symptom trends — but it cannot be linked back to any individual. Think of it as contributing to an anonymous dataset that makes the guidance better for everyone going through this.
+**Cloud backup.** When Firebase is configured, your data syncs to Firestore under your anonymous recovery code. Only you hold that code — without it, nobody (including us) can access your data. Each user's Firestore data is isolated by their anonymous UID via security rules.
 
-**Your exports, your control.** You can download all your data as JSON at any time from Settings, and wipe everything with a single tap.
-
-Each user's Firestore data is isolated by their anonymous UID via security rules — no other user or admin can read it.
-
----
-
-## Deploying to Vercel
-
-```bash
-npm install -g vercel
-vercel
-```
-
-Add your Firebase env vars in the Vercel dashboard under **Settings → Environment Variables**, then redeploy. Done.
+**Your exports, your control.** Download all your data as JSON at any time from Settings, and wipe everything with a single tap.
 
 ---
 
