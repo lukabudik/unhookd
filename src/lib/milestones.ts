@@ -39,7 +39,7 @@ const STREAK_MILESTONES: Array<{ days: number; icon: string; title: string; mess
     days: 7,
     icon: 'Star',
     title: 'One full week!',
-    message: 'Seven days of commitment. That\'s not luck — that\'s you choosing this.',
+    message: "Seven days of commitment. That's not luck — that's you choosing this.",
   },
   {
     days: 14,
@@ -51,7 +51,7 @@ const STREAK_MILESTONES: Array<{ days: number; icon: string; title: string; mess
     days: 21,
     icon: 'Brain',
     title: '21 days strong',
-    message: 'Three weeks. Habits form here. You\'re building a new normal.',
+    message: "Three weeks. Habits form here. You're building a new normal.",
   },
   {
     days: 30,
@@ -72,13 +72,13 @@ const JOURNEY_MILESTONES: Array<{ days: number; icon: string; title: string; mes
     days: 30,
     icon: 'Target',
     title: 'One month on the path',
-    message: 'A full month since you started. Look how far you\'ve already come.',
+    message: "A full month since you started. Look how far you've already come.",
   },
   {
     days: 60,
     icon: 'Mountain',
     title: 'Two months of growth',
-    message: '60 days. You\'ve made this a real, sustained part of your life.',
+    message: "60 days. You've made this a real, sustained part of your life.",
   },
 ]
 
@@ -93,7 +93,7 @@ const PROGRESS_MILESTONES: Array<{ pct: number; icon: string; title: string; mes
     pct: 50,
     icon: 'Zap',
     title: 'Halfway to your goal!',
-    message: 'You\'re at the midpoint. The summit is in sight. Keep climbing.',
+    message: "You're at the midpoint. The summit is in sight. Keep climbing.",
   },
   {
     pct: 75,
@@ -118,23 +118,41 @@ export function checkNewMilestones(plan: TaperPlan, streak: number): Milestone[]
   for (const m of STREAK_MILESTONES) {
     const id = `streak_${m.days}`
     if (!celebrated.has(id) && streak >= m.days) {
-      newMilestones.push({ id, icon: m.icon, title: m.title, message: m.message, accentColor: '#7fb069' })
+      newMilestones.push({
+        id,
+        icon: m.icon,
+        title: m.title,
+        message: m.message,
+        accentColor: '#7fb069',
+      })
     }
   }
 
   for (const m of JOURNEY_MILESTONES) {
     const id = `journey_${m.days}`
     if (!celebrated.has(id) && daysSinceStart >= m.days) {
-      newMilestones.push({ id, icon: m.icon, title: m.title, message: m.message, accentColor: '#e8a87c' })
+      newMilestones.push({
+        id,
+        icon: m.icon,
+        title: m.title,
+        message: m.message,
+        accentColor: '#e8a87c',
+      })
     }
   }
 
-  const totalDays = plan.weeksToTarget * 7
+  const totalDays = plan.daysToTarget !== undefined ? plan.daysToTarget : plan.weeksToTarget * 7
   const progressPct = totalDays > 0 ? Math.round((daysSinceStart / totalDays) * 100) : 0
   for (const m of PROGRESS_MILESTONES) {
     const id = `progress_${m.pct}`
     if (!celebrated.has(id) && progressPct >= m.pct) {
-      newMilestones.push({ id, icon: m.icon, title: m.title, message: m.message, accentColor: '#e8a87c' })
+      newMilestones.push({
+        id,
+        icon: m.icon,
+        title: m.title,
+        message: m.message,
+        accentColor: '#e8a87c',
+      })
     }
   }
 

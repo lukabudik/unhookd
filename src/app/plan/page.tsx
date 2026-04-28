@@ -26,7 +26,10 @@ import {
   Feather,
   Wind,
   Skull,
+  Copy,
+  KeyRound,
 } from 'lucide-react'
+import { getOrCreateRecoveryCode } from '@/lib/recovery'
 
 // ─── Utility ──────────────────────────────────────────────────────────────────
 
@@ -1044,6 +1047,8 @@ export default function PlanPage() {
   const [contactPhone, setContactPhone] = useState(taperPlan?.emergencyContact?.phone ?? '')
   const [isSaving, setIsSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [showCodePrompt, setShowCodePrompt] = useState(false)
+  const [codeCopied, setCodeCopied] = useState(false)
   const [isHolding, setIsHolding] = useState(false)
   const [reminderEnabled, setReminderEnabled] = useState(!!reminderTime)
   const [localReminderTime, setLocalReminderTime] = useState(reminderTime || '09:00')
@@ -1131,10 +1136,32 @@ export default function PlanPage() {
 
   async function handleWizardSave(plan: TaperPlan) {
     await updatePlan(plan)
+    // Show recovery code prompt on first-ever plan save
+    const prompted =
+      typeof window !== 'undefined' ? localStorage.getItem('unhookd_code_prompted') : null
+    if (!prompted) {
+      setShowCodePrompt(true)
+    } else {
+      setSaved(true)
+      setTimeout(() => router.push('/'), 1500)
+    }
+  }
+
+  function dismissCodePrompt() {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('unhookd_code_prompted', 'true')
+    }
+    setShowCodePrompt(false)
     setSaved(true)
-    setTimeout(() => {
-      router.push('/')
-    }, 1500)
+    setTimeout(() => router.push('/'), 1200)
+  }
+
+  function copyRecoveryCode() {
+    const code = getOrCreateRecoveryCode()
+    navigator.clipboard.writeText(code).then(() => {
+      setCodeCopied(true)
+      setTimeout(() => setCodeCopied(false), 2000)
+    })
   }
 
   async function handleHold() {
@@ -1158,6 +1185,145 @@ export default function PlanPage() {
   const holdIsActive = !!(
     taperPlan?.holdUntil && new Date(taperPlan.holdUntil) >= new Date(getTodayKey())
   )
+
+  if (showCodePrompt) {
+    const code = getOrCreateRecoveryCode()
+    return (
+      <div className="page-container" style={{ paddingTop: 24, paddingBottom: 24 }}>
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          style={{ display: 'flex', flexDirection: 'column', gap: 20 }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div
+              style={{
+                width: 48,
+                height: 48,
+                borderRadius: 14,
+                flexShrink: 0,
+                backgroundColor: 'rgba(232,168,124,0.12)',
+                border: '1px solid rgba(232,168,124,0.3)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <KeyRound size={22} color="var(--primary)" strokeWidth={1.75} />
+            </div>
+            <div>
+              <h2
+                style={{
+                  fontSize: 20,
+                  fontWeight: 700,
+                  color: 'var(--text-primary)',
+                  margin: '0 0 3px 0',
+                }}
+              >
+                Save your recovery code
+              </h2>
+              <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0 }}>
+                The only way to restore your data on a new device.
+              </p>
+            </div>
+          </div>
+
+          <div
+            style={{
+              backgroundColor: 'var(--surface)',
+              borderRadius: 18,
+              padding: 20,
+              border: '1px solid var(--border)',
+            }}
+          >
+            <p
+              style={{
+                fontSize: 13,
+                color: 'var(--text-secondary)',
+                margin: '0 0 14px 0',
+                lineHeight: 1.6,
+              }}
+            >
+              Your data is stored privately on this device. If you lose your phone or reinstall,
+              enter this code in Settings → Restore to get everything back.
+            </p>
+            <div
+              style={{
+                backgroundColor: 'var(--bg)',
+                borderRadius: 12,
+                padding: '14px 16px',
+                border: '1px solid var(--border)',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                gap: 12,
+                marginBottom: 12,
+              }}
+            >
+              <span
+                style={{
+                  fontSize: 22,
+                  fontWeight: 800,
+                  color: 'var(--primary)',
+                  letterSpacing: '0.08em',
+                  fontFamily: 'monospace',
+                }}
+              >
+                {code}
+              </span>
+              <button
+                onClick={copyRecoveryCode}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  height: 36,
+                  padding: '0 14px',
+                  borderRadius: 10,
+                  backgroundColor: codeCopied ? 'rgba(127,176,105,0.15)' : 'rgba(232,168,124,0.1)',
+                  border: `1px solid ${codeCopied ? 'rgba(127,176,105,0.3)' : 'rgba(232,168,124,0.3)'}`,
+                  color: codeCopied ? 'var(--success)' : 'var(--primary)',
+                  fontWeight: 600,
+                  fontSize: 13,
+                  cursor: 'pointer',
+                  flexShrink: 0,
+                }}
+              >
+                {codeCopied ? (
+                  <>
+                    <Check size={14} strokeWidth={2.5} /> Copied
+                  </>
+                ) : (
+                  <>
+                    <Copy size={14} strokeWidth={2} /> Copy
+                  </>
+                )}
+              </button>
+            </div>
+            <p style={{ fontSize: 11, color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>
+              Screenshot this or save it to your notes. Don&apos;t share it with others.
+            </p>
+          </div>
+
+          <button
+            onClick={dismissCodePrompt}
+            style={{
+              height: 56,
+              borderRadius: 16,
+              backgroundColor: 'var(--primary)',
+              color: 'var(--bg)',
+              fontWeight: 700,
+              fontSize: 17,
+              border: 'none',
+              cursor: 'pointer',
+            }}
+          >
+            I&apos;ve saved it — start my journey
+          </button>
+        </motion.div>
+      </div>
+    )
+  }
 
   if (saved) {
     return (
