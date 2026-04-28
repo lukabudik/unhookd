@@ -231,12 +231,19 @@ export function QuickLogSheet({
                       >
                         Target: {dailyTarget}g today
                         {lastDoseMinsAgo !== null && (
-                          <span style={{ marginLeft: 8, color: 'var(--primary)' }}>
+                          <span
+                            style={{
+                              marginLeft: 8,
+                              color: lastDoseMinsAgo < 120 ? '#e8a87c' : 'var(--text-secondary)',
+                              fontWeight: lastDoseMinsAgo < 120 ? 600 : 400,
+                            }}
+                          >
                             · last{' '}
                             {lastDoseMinsAgo < 60
                               ? `${lastDoseMinsAgo}m`
                               : `${Math.floor(lastDoseMinsAgo / 60)}h ${lastDoseMinsAgo % 60}m`}{' '}
                             ago
+                            {lastDoseMinsAgo < 120 && ' · spacing doses 3–4h apart reduces peaks'}
                           </span>
                         )}
                       </p>

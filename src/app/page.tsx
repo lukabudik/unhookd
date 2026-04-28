@@ -30,7 +30,7 @@ import { SymptomSuggestionsCard } from '@/components/SymptomSuggestionsCard'
 import { QuickLogSheet } from '@/components/QuickLogSheet'
 import { DailyCheckIn } from '@/components/DailyCheckIn'
 import { format } from 'date-fns'
-import { Bell, Shield, Waves, Frown, Meh, Smile, Pencil, X } from 'lucide-react'
+import { Bell, Shield, Waves, Frown, Meh, Smile, Pencil, X, TrendingDown } from 'lucide-react'
 import Link from 'next/link'
 
 function MoodIcon({ mood }: { mood?: string }) {
@@ -831,6 +831,50 @@ export default function HomePage() {
 
           {/* Phase guidance card — below check-in, less intrusive */}
           {phaseInfo && <PhaseGuidanceCard phaseInfo={phaseInfo} />}
+
+          {/* "Ready to drop?" nudge — shown after 7+ days on target, not post-zero */}
+          {taperPlan && !isPostZero && streak >= 7 && (
+            <motion.div
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              style={{
+                backgroundColor: 'rgba(127,176,105,0.07)',
+                border: '1px solid rgba(127,176,105,0.25)',
+                borderRadius: 16,
+                padding: '12px 16px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+              }}
+            >
+              <TrendingDown
+                size={18}
+                color="var(--success)"
+                strokeWidth={1.75}
+                style={{ flexShrink: 0 }}
+              />
+              <p style={{ margin: 0, fontSize: 13, lineHeight: 1.5, flex: 1 }}>
+                <span style={{ color: 'var(--success)', fontWeight: 600 }}>
+                  {streak} days on target.
+                </span>{' '}
+                <span style={{ color: 'var(--text-secondary)' }}>
+                  If you&apos;re feeling stable, your body may be ready for your next drop.
+                </span>
+              </p>
+              <Link
+                href="/plan"
+                style={{
+                  fontSize: 12,
+                  fontWeight: 600,
+                  color: 'var(--success)',
+                  textDecoration: 'none',
+                  flexShrink: 0,
+                }}
+              >
+                View plan →
+              </Link>
+            </motion.div>
+          )}
 
           {/* Supplement suggestions — only when recent symptom data exists */}
           <SymptomSuggestionsCard supplements={suggestedSupplements} />
