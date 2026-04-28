@@ -54,6 +54,7 @@ function Row({
   value,
   onClick,
   href,
+  external,
   danger,
   children,
   noBorder,
@@ -62,6 +63,7 @@ function Row({
   value?: string
   onClick?: () => void
   href?: string
+  external?: boolean
   danger?: boolean
   children?: React.ReactNode
   noBorder?: boolean
@@ -100,6 +102,18 @@ function Row({
     </div>
   )
 
+  if (href && external) {
+    return (
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{ textDecoration: 'none', display: 'block' }}
+      >
+        {inner}
+      </a>
+    )
+  }
   if (href) {
     return (
       <Link href={href} style={{ textDecoration: 'none', display: 'block' }}>
@@ -762,6 +776,12 @@ export default function SettingsPage() {
             <Row label="Version" value={pkg.version} noBorder={false} />
             <Row label="Purpose" value="Gentle taper tracking" noBorder={false} />
             <Row label="Install on home screen" href="/install" noBorder={false} />
+            <Row
+              label="Share feedback"
+              href="https://tally.so/r/aQj1BZ"
+              external
+              noBorder={false}
+            />
             <Row label="Privacy & Disclaimer" href="/privacy" noBorder />
           </Section>
 
