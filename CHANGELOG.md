@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://github.com/lukabudik/unhookd/compare/v1.1.0...v1.2.0) (2026-04-28)
+
+
+### Features
+
+* **settings:** add Tally feedback link to Settings and README ([#19](https://github.com/lukabudik/unhookd/issues/19)) ([966c473](https://github.com/lukabudik/unhookd/commit/966c473608b462ca1a3c00cb12e4724b40f3beb8))
+
 ## [1.1.0](https://github.com/lukabudik/unhookd/compare/v1.0.0...v1.1.0) (2026-04-28)
 
 
