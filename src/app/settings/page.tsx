@@ -885,6 +885,7 @@ export default function SettingsPage() {
             <Row label="App" value="Unhookd" noBorder={false} />
             <Row label="Version" value={pkg.version} noBorder={false} />
             <Row label="Purpose" value="Gentle taper tracking" noBorder={false} />
+            <Row label="Install on home screen" href="/install" noBorder={false} />
             <Row label="Privacy & Disclaimer" href="/privacy" noBorder />
           </Section>
 
