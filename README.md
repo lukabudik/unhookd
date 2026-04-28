@@ -198,6 +198,14 @@ src/
 
 ---
 
+## Feedback
+
+Using Unhookd? We'd love to hear what's working and what's not.
+
+**[→ Share feedback (anonymous, 2 minutes)](https://tally.so/r/aQj1BZ)**
+
+---
+
 ## A Note on Supplement Guidance
 
 The supplement suggestions in this app are based on community experience and general nutritional science. They are **not medical advice**. Kratom withdrawal is real but rarely dangerous — however, for high-dose or long-term use, medical supervision is appropriate. Prescription options like clonidine (autonomic symptoms) and hydroxyzine (sleep/anxiety) are effective and underused; worth asking a doctor about.
