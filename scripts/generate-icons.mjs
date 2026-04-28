@@ -47,7 +47,7 @@ const logoAppIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1
     </radialGradient>
   </defs>
   <rect width="1024" height="1024" rx="224" fill="url(#bg)"/>
-  <g transform="translate(92 20) scale(0.82)">${MARK}</g>
+  <g transform="translate(92 92) scale(0.82)">${MARK}</g>
 </svg>`
 
 // ─── Write brand SVGs ──────────────────────────────────────────────────────────
