@@ -42,7 +42,7 @@ function MoodIcon({ mood }: { mood?: string }) {
 
 export default function HomePage() {
   const { todayIntakes, taperPlan, getTodayTotal } = useAppStore()
-  const { addIntake, updateIntake, deleteIntake } = useFirestore()
+  const { addIntake, updateIntake, deleteIntake, updatePlan } = useFirestore()
   const { permission, requestPermission } = useNotifications()
   const [showNotifBanner, setShowNotifBanner] = useState(false)
   const [notifDismissed, setNotifDismissed] = useState(false)
@@ -56,6 +56,7 @@ export default function HomePage() {
   const [showResistanceToast, setShowResistanceToast] = useState(false)
   const [dosesExpanded, setDosesExpanded] = useState(false)
   const [suggestedSupplements, setSuggestedSupplements] = useState<Supplement[]>([])
+  const [isHolding, setIsHolding] = useState(false)
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -121,6 +122,19 @@ export default function HomePage() {
     setShowCravingModal(false)
     setShowResistanceToast(true)
     setTimeout(() => setShowResistanceToast(false), 3000)
+  }
+
+  async function handleHold() {
+    if (!taperPlan || isHolding) return
+    setIsHolding(true)
+    const holdEnd = new Date()
+    holdEnd.setDate(holdEnd.getDate() + 6)
+    await updatePlan({
+      ...taperPlan,
+      holdStartDate: getTodayKey(),
+      holdUntil: holdEnd.toISOString().split('T')[0],
+    })
+    setIsHolding(false)
   }
 
   const todayTotal = getTodayTotal()
@@ -493,6 +507,69 @@ export default function HomePage() {
               weeklyContext={weeklyContext}
             />
           ) : null}
+
+          {/* Hold pill — shown when taper is active and no hold is set */}
+          {taperPlan && !isPostZero && !taperPlan.holdUntil && (
+            <motion.button
+              onClick={handleHold}
+              disabled={isHolding}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.15 }}
+              style={{
+                width: '100%',
+                padding: '11px 16px',
+                borderRadius: 14,
+                backgroundColor: 'transparent',
+                border: '1px solid var(--border)',
+                color: 'var(--text-secondary)',
+                fontSize: 13,
+                fontWeight: 500,
+                cursor: isHolding ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+                opacity: isHolding ? 0.6 : 1,
+              }}
+            >
+              <Waves size={15} color="var(--text-secondary)" strokeWidth={1.75} />
+              {isHolding ? 'Setting hold…' : 'Struggling? Hold your dose for 7 days'}
+            </motion.button>
+          )}
+
+          {/* Active hold banner */}
+          {taperPlan &&
+            !isPostZero &&
+            taperPlan.holdUntil &&
+            new Date(taperPlan.holdUntil) >= new Date(getTodayKey()) && (
+              <div
+                style={{
+                  padding: '11px 16px',
+                  borderRadius: 14,
+                  backgroundColor: 'rgba(232,168,124,0.07)',
+                  border: '1px solid rgba(232,168,124,0.25)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 8,
+                }}
+              >
+                <span style={{ fontSize: 13, color: 'var(--primary)', fontWeight: 500 }}>
+                  Hold active until{' '}
+                  {new Date(taperPlan.holdUntil).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                  })}
+                </span>
+                <Link
+                  href="/plan"
+                  style={{ fontSize: 12, color: 'var(--text-secondary)', textDecoration: 'none' }}
+                >
+                  Manage →
+                </Link>
+              </div>
+            )}
 
           {/* Primary CTA — Log dose */}
           {taperPlan && !isPostZero && (

@@ -128,6 +128,7 @@ export default function SettingsPage() {
   const [showRestore, setShowRestore] = useState(false)
   const [restoreInput, setRestoreInput] = useState('')
   const [restoreError, setRestoreError] = useState('')
+  const [restoring, setRestoring] = useState(false)
 
   useEffect(() => {
     setReminderEnabled(!!reminderTime)
@@ -161,6 +162,15 @@ export default function SettingsPage() {
       setRestoreError("That's already your current code.")
       return
     }
+    setRestoring(true)
+    // Clear all local app data so Firestore is the clean source of truth
+    // after the new recovery code takes effect on reload.
+    const keys: string[] = []
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i)
+      if (k && k.startsWith('unhookd_') && k !== 'unhookd_recovery_code') keys.push(k)
+    }
+    keys.forEach((k) => localStorage.removeItem(k))
     setRecoveryCode(code)
     window.location.href = '/'
   }
@@ -708,20 +718,21 @@ export default function SettingsPage() {
                       </p>
                       <button
                         onClick={handleRestore}
-                        disabled={restoreInput.length < 14}
+                        disabled={restoreInput.length < 14 || restoring}
                         style={{
                           height: 44,
                           borderRadius: 12,
                           fontWeight: 600,
                           fontSize: 14,
                           border: 'none',
-                          cursor: restoreInput.length >= 14 ? 'pointer' : 'default',
+                          cursor: restoreInput.length >= 14 && !restoring ? 'pointer' : 'default',
                           backgroundColor:
                             restoreInput.length >= 14 ? 'var(--primary)' : 'var(--surface)',
                           color: restoreInput.length >= 14 ? 'var(--bg)' : 'var(--text-secondary)',
+                          opacity: restoring ? 0.7 : 1,
                         }}
                       >
-                        Restore my data
+                        {restoring ? 'Restoring…' : 'Restore my data'}
                       </button>
                     </div>
                   </motion.div>
@@ -873,7 +884,8 @@ export default function SettingsPage() {
           <Section title="About">
             <Row label="App" value="Unhookd" noBorder={false} />
             <Row label="Version" value={pkg.version} noBorder={false} />
-            <Row label="Purpose" value="Gentle taper tracking" noBorder />
+            <Row label="Purpose" value="Gentle taper tracking" noBorder={false} />
+            <Row label="Privacy & Disclaimer" href="/privacy" noBorder />
           </Section>
 
           <p
