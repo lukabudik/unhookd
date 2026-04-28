@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import { useAppStore, TaperPlan } from '@/lib/store'
 import { useFirestore } from '@/hooks/useFirestore'
-import { useNotifications } from '@/hooks/useNotifications'
 import {
   formatGrams,
   getDailyTargetForDate,
@@ -1025,7 +1024,6 @@ export default function PlanPage() {
   const router = useRouter()
   const { taperPlan } = useAppStore()
   const { updatePlan } = useFirestore()
-  const { permission, reminderTime, setReminderTime, requestPermission } = useNotifications()
 
   const [mode, setMode] = useState<'overview' | 'edit'>(taperPlan ? 'overview' : 'edit')
   const [startAmount, setStartAmount] = useState(taperPlan?.startAmount ?? 8)
@@ -1050,15 +1048,6 @@ export default function PlanPage() {
   const [showCodePrompt, setShowCodePrompt] = useState(false)
   const [codeCopied, setCodeCopied] = useState(false)
   const [isHolding, setIsHolding] = useState(false)
-  const [reminderEnabled, setReminderEnabled] = useState(!!reminderTime)
-  const [localReminderTime, setLocalReminderTime] = useState(reminderTime || '09:00')
-
-  useEffect(() => {
-    if (reminderTime) {
-      setReminderEnabled(true)
-      setLocalReminderTime(reminderTime)
-    }
-  }, [reminderTime])
 
   useEffect(() => {
     if (taperPlan) {
@@ -1077,25 +1066,6 @@ export default function PlanPage() {
       setContactPhone(taperPlan.emergencyContact?.phone ?? '')
     }
   }, [taperPlan])
-
-  async function handleToggleReminder() {
-    if (!reminderEnabled) {
-      if (permission !== 'granted') {
-        const granted = await requestPermission()
-        if (!granted) return
-      }
-      setReminderEnabled(true)
-      setReminderTime(localReminderTime)
-    } else {
-      setReminderEnabled(false)
-      setReminderTime(null)
-    }
-  }
-
-  function handleReminderTimeChange(time: string) {
-    setLocalReminderTime(time)
-    if (reminderEnabled) setReminderTime(time)
-  }
 
   const effectiveDays =
     taperUnit === 'cold_turkey' ? 0 : taperUnit === 'days' ? daysToTarget : weeksToTarget * 7
@@ -1599,107 +1569,6 @@ export default function PlanPage() {
             </div>
 
             <TaperTrajectoryChart plan={taperPlan} />
-
-            {/* Reminders */}
-            {permission !== 'unsupported' && (
-              <div
-                style={{
-                  backgroundColor: 'var(--surface)',
-                  borderRadius: 20,
-                  padding: 20,
-                  border: '1px solid var(--border)',
-                }}
-              >
-                <div
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    marginBottom: reminderEnabled ? 16 : 0,
-                  }}
-                >
-                  <div>
-                    <p
-                      style={{
-                        fontSize: 15,
-                        fontWeight: 600,
-                        color: 'var(--text-primary)',
-                        margin: '0 0 2px 0',
-                      }}
-                    >
-                      Daily reminder
-                    </p>
-                    <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: 0 }}>
-                      {permission === 'denied'
-                        ? 'Notifications blocked — enable in browser settings'
-                        : 'Gentle nudge to log your dose'}
-                    </p>
-                  </div>
-                  <button
-                    onClick={handleToggleReminder}
-                    disabled={permission === 'denied'}
-                    style={{
-                      width: 48,
-                      height: 28,
-                      borderRadius: 14,
-                      backgroundColor: reminderEnabled ? 'var(--primary)' : 'var(--border)',
-                      border: 'none',
-                      position: 'relative',
-                      flexShrink: 0,
-                      transition: 'background-color 0.2s ease',
-                      opacity: permission === 'denied' ? 0.4 : 1,
-                      cursor: permission === 'denied' ? 'not-allowed' : 'pointer',
-                    }}
-                  >
-                    <span
-                      style={{
-                        position: 'absolute',
-                        top: 3,
-                        left: reminderEnabled ? 23 : 3,
-                        width: 22,
-                        height: 22,
-                        borderRadius: '50%',
-                        backgroundColor: 'white',
-                        transition: 'left 0.2s ease',
-                        boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
-                      }}
-                    />
-                  </button>
-                </div>
-                {reminderEnabled && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                  >
-                    <label
-                      style={{
-                        fontSize: 12,
-                        color: 'var(--text-secondary)',
-                        display: 'block',
-                        marginBottom: 8,
-                      }}
-                    >
-                      Remind me at
-                    </label>
-                    <input
-                      type="time"
-                      value={localReminderTime}
-                      onChange={(e) => handleReminderTimeChange(e.target.value)}
-                      style={{
-                        width: '100%',
-                        height: 44,
-                        padding: '0 12px',
-                        borderRadius: 12,
-                        fontSize: 16,
-                        backgroundColor: 'var(--surface-elevated)',
-                        color: 'var(--text-primary)',
-                        border: '1px solid var(--border)',
-                      }}
-                    />
-                  </motion.div>
-                )}
-              </div>
-            )}
 
             {taperPlan.reasons && (
               <div

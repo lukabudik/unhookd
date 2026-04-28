@@ -16,12 +16,9 @@ import {
   Copy,
   KeyRound,
   RotateCcw,
-  Bell,
-  FlaskConical,
 } from 'lucide-react'
 import { getOrCreateRecoveryCode, setRecoveryCode, normalize, isValidCode } from '@/lib/recovery'
 import pkg from '../../../package.json'
-import { NOTIFICATION_TYPES, type NotifType } from '@/hooks/useNotifications'
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -116,12 +113,10 @@ function Row({
 export default function SettingsPage() {
   const router = useRouter()
   const { taperPlan } = useAppStore()
-  const { permission, reminderTime, setReminderTime, requestPermission, fireTestNotification } =
-    useNotifications()
+  const { permission, reminderTime, setReminderTime, requestPermission } = useNotifications()
   const [showResetConfirm, setShowResetConfirm] = useState(false)
   const [exportDone, setExportDone] = useState(false)
   const [reminderEnabled, setReminderEnabled] = useState(false)
-  const [localReminderTime, setLocalReminderTime] = useState('09:00')
   const [notifStatus, setNotifStatus] = useState<string>('')
   const [recoveryCode, setLocalCode] = useState('')
   const [copied, setCopied] = useState(false)
@@ -132,7 +127,6 @@ export default function SettingsPage() {
 
   useEffect(() => {
     setReminderEnabled(!!reminderTime)
-    if (reminderTime) setLocalReminderTime(reminderTime)
     if (permission === 'granted') setNotifStatus('Enabled')
     else if (permission === 'denied') setNotifStatus('Blocked by browser')
     else if (permission === 'unsupported') setNotifStatus('Not supported')
@@ -185,14 +179,8 @@ export default function SettingsPage() {
       const granted = await requestPermission()
       if (!granted) return
     }
-    setReminderTime(localReminderTime)
+    setReminderTime('09:00')
     setReminderEnabled(true)
-  }
-
-  function handleTimeChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const t = e.target.value
-    setLocalReminderTime(t)
-    if (reminderEnabled) setReminderTime(t)
   }
 
   function exportData() {
@@ -469,35 +457,6 @@ export default function SettingsPage() {
                     }}
                   />
                 </button>
-              </div>
-            )}
-            {permission === 'granted' && reminderEnabled && (
-              <div
-                style={{
-                  padding: '14px 16px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                }}
-              >
-                <span style={{ fontSize: 15, color: 'var(--text-primary)', fontWeight: 500 }}>
-                  Reminder time
-                </span>
-                <input
-                  type="time"
-                  value={localReminderTime}
-                  onChange={handleTimeChange}
-                  style={{
-                    backgroundColor: 'transparent',
-                    border: '1px solid var(--border)',
-                    borderRadius: 8,
-                    padding: '6px 10px',
-                    color: 'var(--text-primary)',
-                    fontSize: 14,
-                    fontFamily: 'inherit',
-                    cursor: 'pointer',
-                  }}
-                />
               </div>
             )}
             {permission === 'denied' && (
@@ -796,89 +755,6 @@ export default function SettingsPage() {
               </p>
             </div>
           </Section>
-
-          {/* Notification test panel */}
-          {permission === 'granted' && (
-            <Section title="Notification test lab">
-              <div style={{ padding: '14px 16px 8px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                  <FlaskConical size={15} color="var(--text-secondary)" strokeWidth={1.75} />
-                  <p
-                    style={{
-                      margin: 0,
-                      fontSize: 12,
-                      color: 'var(--text-secondary)',
-                      lineHeight: 1.4,
-                    }}
-                  >
-                    Fire any notification immediately to see how it looks. Notifications only appear
-                    when permissions are granted.
-                  </p>
-                </div>
-              </div>
-              {(
-                Object.entries(NOTIFICATION_TYPES) as [
-                  NotifType,
-                  { label: string; description: string },
-                ][]
-              ).map(([type, { label, description }], i, arr) => (
-                <div
-                  key={type}
-                  style={{
-                    padding: '12px 16px',
-                    borderBottom: i < arr.length - 1 ? '1px solid var(--border)' : 'none',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: 12,
-                  }}
-                >
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <p
-                      style={{
-                        margin: 0,
-                        fontSize: 14,
-                        fontWeight: 500,
-                        color: 'var(--text-primary)',
-                      }}
-                    >
-                      {label}
-                    </p>
-                    <p
-                      style={{
-                        margin: '2px 0 0 0',
-                        fontSize: 11,
-                        color: 'var(--text-secondary)',
-                        lineHeight: 1.3,
-                      }}
-                    >
-                      {description}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => fireTestNotification(type)}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 5,
-                      padding: '6px 12px',
-                      borderRadius: 8,
-                      flexShrink: 0,
-                      backgroundColor: 'rgba(232,168,124,0.1)',
-                      border: '1px solid rgba(232,168,124,0.25)',
-                      color: 'var(--primary)',
-                      fontSize: 12,
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <Bell size={11} strokeWidth={2} />
-                    Send
-                  </button>
-                </div>
-              ))}
-            </Section>
-          )}
 
           {/* About section */}
           <Section title="About">
