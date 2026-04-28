@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { CheckCircle2 } from 'lucide-react'
+import { CheckCircle2, Info } from 'lucide-react'
 import Link from 'next/link'
 
 type Platform = 'ios-safari' | 'ios-other' | 'android' | 'desktop' | 'installed' | null
@@ -266,9 +266,16 @@ export default function InstallPage() {
                 lineHeight: 1.5,
               }}
             >
-              💡 The share button looks like a box with an arrow pointing up (
-              <SafariShareIcon />
-              ). It&apos;s in the toolbar at the bottom of Safari.
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <Info
+                  size={13}
+                  strokeWidth={1.75}
+                  style={{ flexShrink: 0, verticalAlign: 'middle' }}
+                />
+                The share button looks like a box with an arrow pointing up (
+                <SafariShareIcon />
+                ). It&apos;s in the toolbar at the bottom of Safari.
+              </span>
             </motion.div>
           </div>
         )}
