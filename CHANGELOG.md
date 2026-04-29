@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.3.0](https://github.com/lukabudik/unhookd/compare/v1.2.0...v1.3.0) (2026-04-28)
+
+
+### Features
+
+* **guidance:** community-aligned taper improvements ([#23](https://github.com/lukabudik/unhookd/issues/23)) ([afc5c71](https://github.com/lukabudik/unhookd/commit/afc5c717b3353b5ded04d52c93b9927e5c55ad38))
+* **seo:** add OG preview image and metadata for social sharing ([#21](https://github.com/lukabudik/unhookd/issues/21)) ([d93885a](https://github.com/lukabudik/unhookd/commit/d93885abe11c56aa8188ea3377c286cc0e7fe9e9))
+
+
+### Bug Fixes
+
+* **install:** replace lightbulb emoji with Info icon ([#24](https://github.com/lukabudik/unhookd/issues/24)) ([a68f6dc](https://github.com/lukabudik/unhookd/commit/a68f6dc290e0ea821b8e163d53a1180f4dc84bb1))
+
 ## [1.2.0](https://github.com/lukabudik/unhookd/compare/v1.1.0...v1.2.0) (2026-04-28)
 
 
